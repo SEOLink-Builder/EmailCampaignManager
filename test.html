@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Page</title>
+</head>
+<body>
+  <h1>Server Test</h1>
+  <p>This is a test page to check if the server is working correctly.</p>
+  
+  <script>
+    // Make a request to our server
+    fetch('/client/pages/auth.html')
+      .then(response => {
+        if (response.ok) {
+          document.body.innerHTML += '<p style="color: green;">Server is accessible! The auth page can be loaded.</p>';
+        } else {
+          document.body.innerHTML += '<p style="color: red;">Error accessing server: ' + response.status + '</p>';
+        }
+      })
+      .catch(error => {
+        document.body.innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+      });
+  </script>
+</body>
+</html>

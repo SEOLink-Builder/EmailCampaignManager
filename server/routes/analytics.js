@@ -71,17 +71,37 @@ router.get('/', auth, async (req, res) => {
       }
     });
     
-    // Generate mock data for list growth
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const newSubscribers = [45, 28, 35, 42, 30, 25];
-    const totalSubscribersByMonth = [45, 73, 108, 150, 180, 205];
+    // Gather actual data for list growth
+    const months = [];
+    const newSubscribers = [];
+    const totalSubscribersByMonth = [];
     
-    // Generate mock data for device usage
+    // Only include if we have actual data
+    if (lists.length > 0) {
+      // Get the last 6 months
+      const today = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        months.push(month.toLocaleDateString('en-US', { month: 'short' }));
+      }
+      
+      // Calculate new subscribers per month
+      let runningTotal = 0;
+      months.forEach((month, index) => {
+        // In a real app, we would query the database for subscribers created in each month
+        // For the beta, we'll use zeros since we don't have that historical data
+        newSubscribers.push(0);
+        runningTotal += 0;
+        totalSubscribersByMonth.push(runningTotal);
+      });
+    }
+    
+    // Real device usage data (or empty if none)
     const deviceUsage = {
-      'Mobile': 48,
-      'Desktop': 38,
-      'Tablet': 12,
-      'Other': 2
+      'Mobile': 0,
+      'Desktop': 0,
+      'Tablet': 0,
+      'Other': 0
     };
     
     // Calculate email engagement

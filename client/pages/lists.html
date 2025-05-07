@@ -115,20 +115,66 @@
                                     <select class="form-select mb-3" id="listSelect">
                                         <option value="" disabled selected>Select a list</option>
                                     </select>
-                                    <div class="drag-drop-area" id="dropArea">
-                                        <i class="fas fa-file-csv fa-2x mb-2"></i>
-                                        <h5>Drag & Drop CSV File</h5>
-                                        <p class="text-muted small">or click to browse files</p>
-                                        <input type="file" id="csvFileInput" class="d-none" accept=".csv">
+                                    
+                                    <!-- Import Method Tabs -->
+                                    <ul class="nav nav-tabs mb-3" id="importTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="csv-tab" data-bs-toggle="tab" data-bs-target="#csv-import" 
+                                                type="button" role="tab" aria-controls="csv-import" aria-selected="true">
+                                                <i class="fas fa-file-csv me-1"></i> CSV Import
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-import" 
+                                                type="button" role="tab" aria-controls="manual-import" aria-selected="false">
+                                                <i class="fas fa-keyboard me-1"></i> Manual Entry
+                                            </button>
+                                        </li>
+                                    </ul>
+                                    
+                                    <!-- Tab content -->
+                                    <div class="tab-content" id="importTabsContent">
+                                        <!-- CSV Import Tab -->
+                                        <div class="tab-pane fade show active" id="csv-import" role="tabpanel" aria-labelledby="csv-tab">
+                                            <div class="drag-drop-area" id="dropArea">
+                                                <i class="fas fa-file-csv fa-2x mb-2"></i>
+                                                <h5>Drag & Drop CSV File</h5>
+                                                <p class="text-muted small">or click to browse files</p>
+                                                <input type="file" id="csvFileInput" class="d-none" accept=".csv">
+                                            </div>
+                                            <div class="mt-3">
+                                                <p class="small text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    CSV file should have headers with at least one 'email' column.
+                                                    Maximum 200 emails per list.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Manual Import Tab -->
+                                        <div class="tab-pane fade" id="manual-import" role="tabpanel" aria-labelledby="manual-tab">
+                                            <form id="manualImportForm">
+                                                <div class="mb-3">
+                                                    <label for="manualEmails" class="form-label">Email Addresses</label>
+                                                    <textarea class="form-control" id="manualEmails" rows="5" 
+                                                        placeholder="Enter email addresses (one per line)&#10;Example:&#10;john@example.com&#10;jane@example.com"></textarea>
+                                                </div>
+                                                <div class="d-grid">
+                                                    <button type="submit" class="btn btn-primary" id="submitManualEmails">
+                                                        <i class="fas fa-plus-circle me-1"></i> Add Emails
+                                                    </button>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <p class="small text-muted">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Enter one email address per line. Maximum 200 emails per list.
+                                                    </p>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
+                                    
                                     <div id="uploadStatus" class="mt-3"></div>
-                                    <div class="mt-3">
-                                        <p class="small text-muted">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            CSV file should have headers with at least one 'email' column.
-                                            Maximum 200 emails per list.
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -157,7 +203,7 @@
                 
                 <!-- Create List Form (initially hidden) -->
                 <div class="row d-none" id="createListFormView">
-                    <div class="col-md-8 mx-auto mb-4">
+                    <div class="col-md-10 mx-auto mb-4">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Create New List</h5>
@@ -166,68 +212,149 @@
                                 </button>
                             </div>
                             <div class="card-body">
-                                <form id="createListForm">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="listName" class="form-label">List Title <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="listName" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="listSubtitle" class="form-label">Subtitle</label>
-                                            <input type="text" class="form-control" id="listSubtitle">
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="listDescription" class="form-label">Description</label>
-                                        <textarea class="form-control" id="listDescription" rows="3"></textarea>
-                                    </div>
-                                    
-                                    <hr class="my-4">
-                                    
-                                    <h6 class="mb-3">Sender Information</h6>
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="senderName" class="form-label">From Name</label>
-                                            <input type="text" class="form-control" id="senderName">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="senderEmail" class="form-label">From Email</label>
-                                            <input type="email" class="form-control" id="senderEmail">
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="replyToEmail" class="form-label">Reply-To Email</label>
-                                        <input type="email" class="form-control" id="replyToEmail">
-                                    </div>
-                                    
-                                    <hr class="my-4">
-                                    
-                                    <h6 class="mb-3">Company Details</h6>
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="companyName" class="form-label">Company Name</label>
-                                            <input type="text" class="form-control" id="companyName">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="companyPhone" class="form-label">Phone Number</label>
-                                            <input type="tel" class="form-control" id="companyPhone">
+                                <div class="row">
+                                    <div class="col-md-4 mb-4 mb-md-0">
+                                        <div class="sticky-top pt-3" style="top: 20px;">
+                                            <div class="card border-light bg-light">
+                                                <div class="card-body">
+                                                    <h6 class="mb-3">Creating a High-Quality List</h6>
+                                                    <ul class="list-unstyled mb-0">
+                                                        <li class="mb-3 d-flex align-items-start">
+                                                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                                                            <div>
+                                                                <strong>Use a descriptive name</strong>
+                                                                <p class="text-muted small mb-0">Make it easy to identify the list's purpose</p>
+                                                            </div>
+                                                        </li>
+                                                        <li class="mb-3 d-flex align-items-start">
+                                                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                                                            <div>
+                                                                <strong>Add sender details</strong>
+                                                                <p class="text-muted small mb-0">Professional sender info improves deliverability</p>
+                                                            </div>
+                                                        </li>
+                                                        <li class="mb-3 d-flex align-items-start">
+                                                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                                                            <div>
+                                                                <strong>Include reply-to email</strong>
+                                                                <p class="text-muted small mb-0">Allow recipients to respond to your campaigns</p>
+                                                            </div>
+                                                        </li>
+                                                        <li class="d-flex align-items-start">
+                                                            <i class="fas fa-check-circle text-success mt-1 me-2"></i>
+                                                            <div>
+                                                                <strong>Add company details</strong>
+                                                                <p class="text-muted small mb-0">Required for compliance with email regulations</p>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-4">
+                                                <div class="alert alert-info">
+                                                    <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i> Next Steps</h6>
+                                                    <p class="mb-0 small">After creating your list, you can import contacts via CSV or add them individually.</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="mb-3">
-                                        <label for="companyAddress" class="form-label">Company Address</label>
-                                        <textarea class="form-control" id="companyAddress" rows="2"></textarea>
+                                    <div class="col-md-8">
+                                        <form id="createListForm">
+                                            <div class="card mb-4">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0"><i class="fas fa-list me-2"></i> List Information</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <label for="listName" class="form-label">List Name <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="listName" required 
+                                                                placeholder="E.g., Newsletter Subscribers">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="listSubtitle" class="form-label">List Subtitle</label>
+                                                            <input type="text" class="form-control" id="listSubtitle" 
+                                                                placeholder="E.g., Weekly Updates">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-0">
+                                                        <label for="listDescription" class="form-label">Description</label>
+                                                        <textarea class="form-control" id="listDescription" rows="3" 
+                                                            placeholder="Describe the purpose of this list, source of contacts, etc."></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card mb-4">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0"><i class="fas fa-user me-2"></i> Sender Information</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <label for="senderName" class="form-label">From Name <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="senderName" required
+                                                                placeholder="E.g., Company Name or Your Name">
+                                                            <div class="form-text">Name that appears in recipients' inboxes</div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="senderEmail" class="form-label">From Email <span class="text-danger">*</span></label>
+                                                            <input type="email" class="form-control" id="senderEmail" required
+                                                                placeholder="E.g., news@example.com">
+                                                            <div class="form-text">Email address shown as sender</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-0">
+                                                        <label for="replyToEmail" class="form-label">Reply-To Email</label>
+                                                        <input type="email" class="form-control" id="replyToEmail"
+                                                            placeholder="E.g., support@example.com">
+                                                        <div class="form-text">Where replies will be sent (if different from sender)</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card mb-4">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0"><i class="fas fa-building me-2"></i> Company Information</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <label for="companyName" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" id="companyName" required
+                                                                placeholder="Your company or organization name">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="companyPhone" class="form-label">Phone Number</label>
+                                                            <input type="tel" class="form-control" id="companyPhone" 
+                                                                placeholder="Contact phone number">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-0">
+                                                        <label for="companyAddress" class="form-label">Company Address <span class="text-danger">*</span></label>
+                                                        <textarea class="form-control" id="companyAddress" rows="2" required
+                                                            placeholder="Physical mailing address (required for CAN-SPAM compliance)"></textarea>
+                                                        <div class="form-text">This address will appear in the footer of your emails</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between mt-4">
+                                                <button type="button" class="btn btn-outline-secondary" id="cancelCreateListBtn">
+                                                    <i class="fas fa-times me-2"></i> Cancel
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i> Create List
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
-                                    
-                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                                        <button type="button" class="btn btn-outline-secondary" id="cancelCreateListBtn">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-plus me-2"></i> Save List
-                                        </button>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>

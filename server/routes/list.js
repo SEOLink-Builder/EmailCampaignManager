@@ -314,4 +314,81 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// @route   POST api/list/import-manual
+// @desc    Import subscribers from manually entered emails
+// @access  Private
+router.post('/import-manual', [
+  auth,
+  [
+    check('listId', 'List ID is required').not().isEmpty(),
+    check('emails', 'Emails array is required').isArray(),
+    check('emails.*', 'Invalid email').isEmail()
+  ]
+], async (req, res) => {
+  try {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+
+    const { listId, emails } = req.body;
+
+    // Find the list
+    const list = await List.findById(listId);
+    
+    // Check if list exists
+    if (!list) {
+      return res.status(404).json({ message: 'List not found' });
+    }
+    
+    // Check if list belongs to user
+    if (list.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Not authorized to access this list' });
+    }
+    
+    // Check email count limit (200 per list)
+    if (list.subscribers.length + emails.length > 200) {
+      return res.status(400).json({ 
+        message: `Cannot import ${emails.length} emails. Maximum 200 subscribers per list. Currently ${list.subscribers.length} subscribers.`
+      });
+    }
+    
+    // Process and validate emails
+    const newSubscribers = [];
+    
+    // Add each email to the list if it doesn't already exist
+    for (const email of emails) {
+      // Check if email already exists in the list
+      const emailExists = list.subscribers.some(sub => sub.email.toLowerCase() === email.toLowerCase());
+      
+      if (!emailExists) {
+        // Add new subscriber
+        newSubscribers.push({
+          email: email.toLowerCase(),
+          status: 'active',
+          addedAt: Date.now()
+        });
+      }
+    }
+    
+    // Add new subscribers to the list
+    list.subscribers = [...list.subscribers, ...newSubscribers];
+    list.updatedAt = Date.now();
+    
+    await list.save();
+    
+    // Return success response
+    res.json({ 
+      success: true,
+      importedCount: newSubscribers.length,
+      totalSubscribers: list.subscribers.length
+    });
+    
+  } catch (err) {
+    console.error('Manual email import error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

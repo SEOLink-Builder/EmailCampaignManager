@@ -3,11 +3,12 @@
 /**
  * User login
  * @param {string} email - User's email
+ * @param {string} password - User's password
  * @returns {Promise<object>} - User data
  */
-async function login(email) {
+async function login(email, password) {
     try {
-        const response = await apiPost('/api/auth/login', { email });
+        const response = await apiPost('/api/auth/login', { email, password });
         
         if (response.user) {
             // Store user info in session storage
@@ -24,12 +25,14 @@ async function login(email) {
 
 /**
  * User registration
+ * @param {string} name - User's name
  * @param {string} email - User's email
+ * @param {string} password - User's password
  * @returns {Promise<object>} - User data
  */
-async function register(email) {
+async function register(name, email, password) {
     try {
-        const response = await apiPost('/api/auth/register', { email });
+        const response = await apiPost('/api/auth/register', { name, email, password });
         
         if (response.user) {
             // Store user info in session storage
@@ -40,6 +43,28 @@ async function register(email) {
         }
     } catch (error) {
         console.error('Registration error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete user account
+ * @param {string} password - User's password for confirmation
+ * @returns {Promise<void>}
+ */
+async function deleteAccount(password) {
+    try {
+        const response = await apiDelete('/api/auth/delete-account', { password });
+        
+        if (response.success || response.message) {
+            // Clear session storage
+            sessionStorage.removeItem('user');
+            return response;
+        } else {
+            throw new Error('Account deletion failed');
+        }
+    } catch (error) {
+        console.error('Delete account error:', error);
         throw error;
     }
 }
@@ -89,6 +114,28 @@ function protectRoute() {
 
 // Event listener for login form
 document.addEventListener('DOMContentLoaded', () => {
+    // Toggle password visibility
+    const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+    if (togglePasswordButtons) {
+        togglePasswordButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const passwordInput = this.previousElementSibling;
+                const icon = this.querySelector('i');
+                
+                // Toggle password visibility
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    }
+    
     // Check if we're on the auth page
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -96,16 +143,17 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
             const loginStatus = document.getElementById('loginStatus');
             
             try {
-                loginStatus.textContent = 'Logging in...';
+                loginStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Logging in...';
                 loginStatus.className = 'text-info';
                 
-                await login(emailInput.value);
+                await login(emailInput.value, passwordInput.value);
                 window.location.href = '/client/pages/dashboard.html';
             } catch (error) {
-                loginStatus.textContent = error.message || 'Login failed.';
+                loginStatus.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i> ${error.message || 'Login failed.'}`;
                 loginStatus.className = 'text-danger';
             }
         });
@@ -117,17 +165,27 @@ document.addEventListener('DOMContentLoaded', () => {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const nameInput = document.getElementById('registerName');
             const emailInput = document.getElementById('registerEmail');
+            const passwordInput = document.getElementById('registerPassword');
+            const passwordConfirmInput = document.getElementById('registerPasswordConfirm');
             const registerStatus = document.getElementById('registerStatus');
             
+            // Validate passwords match
+            if (passwordInput.value !== passwordConfirmInput.value) {
+                registerStatus.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Passwords do not match';
+                registerStatus.className = 'text-danger';
+                return;
+            }
+            
             try {
-                registerStatus.textContent = 'Creating account...';
+                registerStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Creating account...';
                 registerStatus.className = 'text-info';
                 
-                await register(emailInput.value);
+                await register(nameInput.value, emailInput.value, passwordInput.value);
                 window.location.href = '/client/pages/dashboard.html';
             } catch (error) {
-                registerStatus.textContent = error.message || 'Registration failed.';
+                registerStatus.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i> ${error.message || 'Registration failed.'}`;
                 registerStatus.className = 'text-danger';
             }
         });

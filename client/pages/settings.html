@@ -76,121 +76,391 @@
                     <h1 class="h3">Settings</h1>
                 </div>
 
-                <div class="row">
-                    <!-- Account Settings -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Account Settings</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="accountSettingsForm">
-                                    <div class="mb-3">
-                                        <label for="userEmail" class="form-label">Email Address</label>
-                                        <input type="email" class="form-control" id="userEmail" disabled>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="accountType" class="form-label">Account Type</label>
-                                        <input type="text" class="form-control" id="accountType" value="Free Account" disabled>
-                                    </div>
-                                    <div class="d-grid">
-                                        <button type="button" class="btn btn-outline-danger" id="deleteAccountBtn">
-                                            <i class="fas fa-trash me-2"></i> Delete Account
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Navigation tabs -->
+                <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="true">
+                            <i class="fas fa-user me-2"></i> Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email-tab-pane" type="button" role="tab" aria-controls="email-tab-pane" aria-selected="false">
+                            <i class="fas fa-envelope me-2"></i> Email Settings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-tab-pane" type="button" role="tab" aria-controls="security-tab-pane" aria-selected="false">
+                            <i class="fas fa-shield-alt me-2"></i> Security
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-tab-pane" type="button" role="tab" aria-controls="advanced-tab-pane" aria-selected="false">
+                            <i class="fas fa-cogs me-2"></i> Advanced
+                        </button>
+                    </li>
+                </ul>
 
-                    <!-- Email Settings -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Email Settings</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="emailSettingsForm">
-                                    <div class="mb-3">
-                                        <label for="senderName" class="form-label">Sender Name</label>
-                                        <input type="text" class="form-control" id="senderName" placeholder="Your name or company name">
+                <div class="tab-content" id="settingsTabContent">
+                    <!-- Profile Tab -->
+                    <div class="tab-pane fade show active" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+                        <div class="row">
+                            <!-- Profile Information -->
+                            <div class="col-md-8 mb-4">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Profile Information</h5>
+                                        <span class="badge bg-primary">Free Account</span>
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="replyToEmail" class="form-label">Reply-To Email</label>
-                                        <input type="email" class="form-control" id="replyToEmail" placeholder="email@example.com">
+                                    <div class="card-body">
+                                        <form id="profileForm">
+                                            <div class="mb-3">
+                                                <label for="displayName" class="form-label">Full Name</label>
+                                                <input type="text" class="form-control" id="displayName" placeholder="Your name">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="userEmail" class="form-label">Email Address</label>
+                                                <input type="email" class="form-control" id="userEmail" disabled>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="accountCreated" class="form-label">Account Created</label>
+                                                <input type="text" class="form-control" id="accountCreated" disabled>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="lastLogin" class="form-label">Last Login</label>
+                                                <input type="text" class="form-control" id="lastLogin" disabled>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i> Save Profile
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="trackOpens" checked>
-                                            <label class="form-check-label" for="trackOpens">
-                                                Track email opens
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="trackClicks" checked>
-                                            <label class="form-check-label" for="trackClicks">
-                                                Track link clicks
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="d-grid">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i> Save Settings
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SMTP Settings -->
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">SMTP Settings</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-info mb-4">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    In the beta version, we're using Ethereal for email testing. You don't need to configure SMTP settings.
                                 </div>
-                                <form id="smtpSettingsForm">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="smtpHost" class="form-label">SMTP Host</label>
-                                            <input type="text" class="form-control" id="smtpHost" disabled value="smtp.ethereal.email">
+                            </div>
+                            
+                            <!-- Account Stats -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Account Stats</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Lists</span>
+                                                <span id="listsCount">0</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar" id="listsProgress" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <div class="small text-muted mt-1">0 of 5 lists</div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <label for="smtpPort" class="form-label">SMTP Port</label>
-                                            <input type="number" class="form-control" id="smtpPort" disabled value="587">
+                                        
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Templates</span>
+                                                <span id="templatesCount">0</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar" id="templatesProgress" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <div class="small text-muted mt-1">0 of 10 templates</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Subscribers</span>
+                                                <span id="subscribersCount">0</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar" id="subscribersProgress" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <div class="small text-muted mt-1">0 of 500 subscribers</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Monthly Emails</span>
+                                                <span id="emailsCount">0</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar" id="emailsProgress" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <div class="small text-muted mt-1">0 of 2000 emails/month</div>
+                                        </div>
+                                        
+                                        <hr class="my-4">
+                                        
+                                        <div class="text-center">
+                                            <a href="#" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-crown me-2"></i> Upgrade Plan
+                                            </a>
                                         </div>
                                     </div>
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="smtpUsername" class="form-label">SMTP Username</label>
-                                            <input type="text" class="form-control" id="smtpUsername" disabled value="Auto-generated">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Email Settings Tab -->
+                    <div class="tab-pane fade" id="email-tab-pane" role="tabpanel" aria-labelledby="email-tab" tabindex="0">
+                        <div class="row">
+                            <!-- Sender Details -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Sender Details</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="senderDetailsForm">
+                                            <div class="mb-3">
+                                                <label for="senderName" class="form-label">Default Sender Name</label>
+                                                <input type="text" class="form-control" id="senderName" placeholder="Your name or company name">
+                                                <div class="form-text">This name will appear in recipients' inboxes</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="replyToEmail" class="form-label">Default Reply-To Email</label>
+                                                <input type="email" class="form-control" id="replyToEmail" placeholder="email@example.com">
+                                                <div class="form-text">Where recipients' replies will be sent</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="companyAddress" class="form-label">Company Physical Address</label>
+                                                <textarea class="form-control" id="companyAddress" rows="3" placeholder="Your company's physical address"></textarea>
+                                                <div class="form-text">Required for CAN-SPAM compliance</div>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i> Save Details
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Email Tracking -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Email Tracking</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="emailTrackingForm">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="trackOpens" checked>
+                                                    <label class="form-check-label" for="trackOpens">
+                                                        Track email opens
+                                                    </label>
+                                                </div>
+                                                <div class="form-text ms-4">
+                                                    Add a tracking pixel to know when subscribers open your emails
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="trackClicks" checked>
+                                                    <label class="form-check-label" for="trackClicks">
+                                                        Track link clicks
+                                                    </label>
+                                                </div>
+                                                <div class="form-text ms-4">
+                                                    Monitor which links subscribers click in your emails
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="collectDeviceInfo" checked>
+                                                    <label class="form-check-label" for="collectDeviceInfo">
+                                                        Collect device information
+                                                    </label>
+                                                </div>
+                                                <div class="form-text ms-4">
+                                                    Gather data about subscribers' devices and email clients
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="enableUnsubscribeTracking" checked>
+                                                    <label class="form-check-label" for="enableUnsubscribeTracking">
+                                                        Track unsubscribes
+                                                    </label>
+                                                </div>
+                                                <div class="form-text ms-4">
+                                                    Monitor when subscribers opt out of your emails
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i> Save Tracking Preferences
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Tab -->
+                    <div class="tab-pane fade" id="security-tab-pane" role="tabpanel" aria-labelledby="security-tab" tabindex="0">
+                        <div class="row">
+                            <!-- Change Password -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Change Password</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="changePasswordForm">
+                                            <div class="mb-3">
+                                                <label for="currentPassword" class="form-label">Current Password</label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control" id="currentPassword" required>
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="newPassword" class="form-label">New Password</label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control" id="newPassword" required minlength="6">
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="form-text">Password must be at least 6 characters</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control" id="confirmNewPassword" required minlength="6">
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-key me-2"></i> Update Password
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Security Settings -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Account Security</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="list-group mb-4">
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">Session Timeout</h6>
+                                                    <p class="mb-0 small text-muted">Automatically log out after inactivity</p>
+                                                </div>
+                                                <select class="form-select form-select-sm" style="width: 150px;">
+                                                    <option value="30">30 minutes</option>
+                                                    <option value="60" selected>1 hour</option>
+                                                    <option value="120">2 hours</option>
+                                                    <option value="240">4 hours</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">Delete Account</h6>
+                                                    <p class="mb-0 small text-muted">Permanently remove your account and all data</p>
+                                                </div>
+                                                <button type="button" class="btn btn-danger btn-sm" id="deleteAccountBtn">
+                                                    <i class="fas fa-trash me-1"></i> Delete
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <label for="smtpPassword" class="form-label">SMTP Password</label>
-                                            <input type="password" class="form-control" id="smtpPassword" disabled value="••••••••">
+                                        
+                                        <div class="alert alert-warning">
+                                            <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Important</h6>
+                                            <p class="mb-0 small">Deleting your account will permanently remove all your lists, templates, campaigns, and analytics data. This action cannot be undone.</p>
                                         </div>
                                     </div>
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="smtpSecure" disabled checked>
-                                            <label class="form-check-label" for="smtpSecure">
-                                                Use secure connection (TLS)
-                                            </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Tab -->
+                    <div class="tab-pane fade" id="advanced-tab-pane" role="tabpanel" aria-labelledby="advanced-tab" tabindex="0">
+                        <div class="row">
+                            <!-- SMTP Settings -->
+                            <div class="col-md-12 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">SMTP Settings</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-info mb-4">
+                                            <div class="d-flex">
+                                                <div class="me-3">
+                                                    <i class="fas fa-info-circle fa-2x text-info"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="alert-heading">Using Test SMTP in Beta</h6>
+                                                    <p class="mb-0">In the beta version, we're using Ethereal for email testing. Custom SMTP configuration will be available in the full release.</p>
+                                                </div>
+                                            </div>
                                         </div>
+                                        
+                                        <form id="smtpSettingsForm">
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="smtpHost" class="form-label">SMTP Host</label>
+                                                    <input type="text" class="form-control" id="smtpHost" disabled value="smtp.ethereal.email">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="smtpPort" class="form-label">SMTP Port</label>
+                                                    <input type="number" class="form-control" id="smtpPort" disabled value="587">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="smtpUsername" class="form-label">SMTP Username</label>
+                                                    <input type="text" class="form-control" id="smtpUsername" disabled value="Auto-generated">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="smtpPassword" class="form-label">SMTP Password</label>
+                                                    <input type="password" class="form-control" id="smtpPassword" disabled value="••••••••">
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="smtpSecure" disabled checked>
+                                                    <label class="form-check-label" for="smtpSecure">
+                                                        Use secure connection (TLS)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between">
+                                                <button type="button" class="btn btn-outline-secondary" disabled>
+                                                    <i class="fas fa-paper-plane me-2"></i> Send Test Email
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" disabled>
+                                                    <i class="fas fa-check-circle me-2"></i> Test Connection
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
-                                    <div class="d-grid">
-                                        <button type="button" class="btn btn-outline-secondary" disabled>
-                                            <i class="fas fa-check-circle me-2"></i> Test Connection
-                                        </button>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -211,44 +481,213 @@
             // Protect this route
             protectRoute();
             
-            // Populate user email
+            // Toggle password visibility
+            const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+            if (togglePasswordButtons) {
+                togglePasswordButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const passwordInput = this.previousElementSibling;
+                        const icon = this.querySelector('i');
+                        
+                        // Toggle password visibility
+                        if (passwordInput.type === 'password') {
+                            passwordInput.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            passwordInput.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    });
+                });
+            }
+            
+            // Populate user data
             const user = getCurrentUser();
             if (user) {
+                // Basic info
                 document.getElementById('userEmail').value = user.email;
                 document.querySelectorAll('.user-email').forEach(el => {
                     el.textContent = user.email;
                 });
+                
+                // Name (if available)
+                if (user.name) {
+                    document.getElementById('displayName').value = user.name;
+                }
+                
+                // Dates (format them nicely)
+                if (user.createdAt) {
+                    document.getElementById('accountCreated').value = formatDate(user.createdAt);
+                }
+                
+                if (user.lastLogin) {
+                    document.getElementById('lastLogin').value = formatDate(user.lastLogin);
+                }
+                
+                // Set user initials for avatar
+                const userInitials = document.querySelectorAll('.user-initials');
+                userInitials.forEach(el => {
+                    if (user.name) {
+                        const initials = user.name
+                            .split(' ')
+                            .map(n => n[0])
+                            .join('')
+                            .toUpperCase();
+                        el.textContent = initials;
+                    } else {
+                        el.textContent = user.email.substring(0, 2).toUpperCase();
+                    }
+                });
             }
             
-            // Handle email settings form
-            const emailSettingsForm = document.getElementById('emailSettingsForm');
-            if (emailSettingsForm) {
-                emailSettingsForm.addEventListener('submit', (e) => {
+            // Handle profile form
+            const profileForm = document.getElementById('profileForm');
+            if (profileForm) {
+                profileForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     
-                    const senderName = document.getElementById('senderName').value;
-                    const replyToEmail = document.getElementById('replyToEmail').value;
-                    const trackOpens = document.getElementById('trackOpens').checked;
-                    const trackClicks = document.getElementById('trackClicks').checked;
+                    try {
+                        const displayName = document.getElementById('displayName').value;
+                        
+                        // In a real app, this would update the user's profile
+                        showToast('success', 'Profile updated successfully');
+                        
+                        // Update the stored user data
+                        const user = getCurrentUser();
+                        if (user) {
+                            user.name = displayName;
+                            sessionStorage.setItem('user', JSON.stringify(user));
+                            
+                            // Update initials
+                            document.querySelectorAll('.user-initials').forEach(el => {
+                                const initials = displayName
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
+                                    .toUpperCase();
+                                el.textContent = initials;
+                            });
+                        }
+                    } catch (error) {
+                        showToast('error', error.message || 'Failed to update profile');
+                    }
+                });
+            }
+            
+            // Handle email settings forms
+            const senderDetailsForm = document.getElementById('senderDetailsForm');
+            if (senderDetailsForm) {
+                senderDetailsForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    showToast('success', 'Sender details updated successfully');
+                });
+            }
+            
+            const emailTrackingForm = document.getElementById('emailTrackingForm');
+            if (emailTrackingForm) {
+                emailTrackingForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    showToast('success', 'Tracking preferences saved successfully');
+                });
+            }
+            
+            // Handle password change
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            if (changePasswordForm) {
+                changePasswordForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
                     
-                    // In a real app, you would save these settings to the server
-                    // For now, just show a success message
-                    showToast('success', 'Settings saved successfully');
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+                    
+                    if (newPassword !== confirmNewPassword) {
+                        showToast('error', 'New passwords do not match');
+                        return;
+                    }
+                    
+                    // In a real app, you would call an API to change the password
+                    showToast('success', 'Password updated successfully');
+                    
+                    // Reset form
+                    changePasswordForm.reset();
                 });
             }
             
             // Handle delete account button
             const deleteAccountBtn = document.getElementById('deleteAccountBtn');
             if (deleteAccountBtn) {
-                deleteAccountBtn.addEventListener('click', () => {
-                    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                        // In a real app, you would delete the account from the server
-                        // For now, just show a message and log out
-                        showToast('success', 'Account deleted successfully');
-                        setTimeout(() => {
-                            logout();
-                        }, 2000);
-                    }
+                deleteAccountBtn.addEventListener('click', async () => {
+                    // Create modal for confirmation
+                    const modal = document.createElement('div');
+                    modal.className = 'modal fade';
+                    modal.id = 'deleteAccountModal';
+                    modal.setAttribute('tabindex', '-1');
+                    modal.innerHTML = `
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Delete Account
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to permanently delete your account?</p>
+                                    <p class="text-danger"><strong>This will delete all your data and cannot be undone!</strong></p>
+                                    <div class="mb-3">
+                                        <label for="deleteConfirmPassword" class="form-label">Enter your password to confirm</label>
+                                        <input type="password" class="form-control" id="deleteConfirmPassword" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
+                                        <i class="fas fa-trash me-2"></i>
+                                        Permanently Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                    
+                    const modalInstance = new bootstrap.Modal(modal);
+                    modalInstance.show();
+                    
+                    // Handle confirm delete button
+                    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+                        const password = document.getElementById('deleteConfirmPassword').value;
+                        
+                        if (!password) {
+                            alert('Please enter your password to confirm account deletion');
+                            return;
+                        }
+                        
+                        try {
+                            // Delete account on the server
+                            await deleteAccount(password);
+                            
+                            modalInstance.hide();
+                            
+                            // Show message and log out
+                            showToast('success', 'Your account and all associated data have been deleted');
+                            setTimeout(() => {
+                                logout();
+                            }, 2000);
+                        } catch (error) {
+                            alert(error.message || 'Failed to delete account');
+                        }
+                    });
+                    
+                    // Clean up the modal when it's hidden
+                    modal.addEventListener('hidden.bs.modal', () => {
+                        document.body.removeChild(modal);
+                    });
                 });
             }
         });

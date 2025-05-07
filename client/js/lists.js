@@ -84,6 +84,12 @@ async function initListsPage() {
     try {
         // Load existing lists
         await loadLists();
+        
+        // Set up manual email import form
+        const manualImportForm = document.getElementById('manualImportForm');
+        if (manualImportForm) {
+            manualImportForm.addEventListener('submit', handleManualImport);
+        }
     } catch (error) {
         console.error('Error initializing lists page:', error);
         showToast('error', 'Failed to load email lists');
@@ -967,4 +973,73 @@ function validateAndProcessFile(file) {
     
     // Process the file
     processCSV(file);
+}
+
+/**
+ * Handle manual email import
+ * @param {Event} e - Form submit event
+ */
+async function handleManualImport(e) {
+    e.preventDefault();
+    
+    try {
+        // Get list ID and manual emails
+        const listSelect = document.getElementById('listSelect');
+        const manualEmails = document.getElementById('manualEmails');
+        const uploadStatus = document.getElementById('uploadStatus');
+        
+        if (!listSelect || !listSelect.value) {
+            uploadStatus.innerHTML = '<div class="alert alert-danger">Please select a list first.</div>';
+            return;
+        }
+        
+        const emailText = manualEmails.value.trim();
+        if (!emailText) {
+            uploadStatus.innerHTML = '<div class="alert alert-danger">Please enter at least one email address.</div>';
+            return;
+        }
+        
+        // Parse email addresses (one per line)
+        const emails = emailText.split('\n')
+            .map(email => email.trim())
+            .filter(email => email && validateEmail(email));
+        
+        if (emails.length === 0) {
+            uploadStatus.innerHTML = '<div class="alert alert-danger">No valid email addresses found.</div>';
+            return;
+        }
+        
+        // Show loading indicator
+        uploadStatus.innerHTML = `
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                    role="progressbar" aria-valuenow="100" aria-valuemin="0" 
+                    aria-valuemax="100" style="width: 100%"></div>
+            </div>
+            <p class="text-center mt-2">Processing emails...</p>
+        `;
+        
+        // Send data to server
+        const response = await apiPost('/api/list/import-manual', {
+            listId: listSelect.value,
+            emails: emails
+        });
+        
+        uploadStatus.innerHTML = `<div class="alert alert-success">
+            Successfully imported ${response.importedCount} email(s).
+        </div>`;
+        
+        // Clear the textarea
+        manualEmails.value = '';
+        
+        // Reload lists to update counts
+        await loadLists();
+        
+    } catch (error) {
+        console.error('Error importing emails manually:', error);
+        const uploadStatus = document.getElementById('uploadStatus');
+        uploadStatus.innerHTML = `<div class="alert alert-danger">
+            ${error.message || 'Error importing emails.'}
+        </div>`;
+    }
 }

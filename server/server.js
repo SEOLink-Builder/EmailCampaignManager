@@ -5,6 +5,8 @@ const path = require('path');
 const connectDB = require('./config/db');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 require('dotenv').config();
@@ -20,6 +22,53 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "cdnjs.cloudflare.com"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: {
+    status: 429,
+    message: 'Too many requests, please try again later.'
+  }
+});
+
+// Apply rate limiting to API routes
+app.use('/api/', apiLimiter);
+
+// More strict rate limiting for authentication routes to prevent brute force
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // limit each IP to 10 login/register requests per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many login attempts, please try again later.'
+  }
+});
 
 // Session middleware
 app.use(session({
@@ -38,14 +87,20 @@ app.use(session({
 // Serve static files from client directory
 app.use('/client', express.static(path.join(__dirname, '../client')));
 app.use('/data', express.static(path.join(__dirname, '../data')));
+app.use('/', express.static(path.join(__dirname, '..'))); // Serve files from the root directory
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth')); // Apply stricter rate limiting to auth routes
 app.use('/api/list', require('./routes/list'));
 app.use('/api/template', require('./routes/template'));
 app.use('/api/campaign', require('./routes/campaign'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/dashboard', require('./routes/analytics')); // Reuse analytics for dashboard data
+
+// Test route
+app.get('/test', (req, res) => {
+  res.sendFile(path.join(__dirname, '../test.html'));
+});
 
 // Root route - redirect to client
 app.get('/', (req, res) => {

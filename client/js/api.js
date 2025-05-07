@@ -108,19 +108,27 @@ async function apiPut(endpoint, data) {
 /**
  * Make a DELETE request to the API
  * @param {string} endpoint - API endpoint
+ * @param {object} data - Optional request data
  * @returns {Promise<any>} Response data
  */
-async function apiDelete(endpoint) {
+async function apiDelete(endpoint, data = null) {
     try {
         const token = getAuthToken();
         
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const options = {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
                 'x-auth-token': token
             }
-        });
+        };
+        
+        // Add body if data is provided
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+        
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);

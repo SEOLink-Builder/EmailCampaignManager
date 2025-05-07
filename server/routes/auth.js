@@ -12,6 +12,8 @@ router.post(
   '/register',
   [
     check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
+    check('name', 'Name is required').not().isEmpty()
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -19,7 +21,7 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email } = req.body;
+    const { email, password, name } = req.body;
 
     try {
       // Check if user exists
@@ -31,7 +33,9 @@ router.post(
 
       // Create new user
       user = new User({
-        email
+        email,
+        password,
+        name
       });
 
       await user.save();
@@ -53,6 +57,7 @@ router.post(
             user: {
               id: user.id,
               email: user.email,
+              name: user.name,
               createdAt: user.createdAt,
               token
             }
@@ -73,6 +78,7 @@ router.post(
   '/login',
   [
     check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Password is required').exists()
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -80,7 +86,7 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email } = req.body;
+    const { email, password } = req.body;
 
     try {
       // Check if user exists
@@ -89,6 +95,17 @@ router.post(
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
+
+      // Check if password matches
+      const isMatch = await user.comparePassword(password);
+      
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+
+      // Update last login time
+      user.lastLogin = Date.now();
+      await user.save();
 
       // Create and return JWT token
       const payload = {
@@ -107,7 +124,9 @@ router.post(
             user: {
               id: user.id,
               email: user.email,
+              name: user.name,
               createdAt: user.createdAt,
+              lastLogin: user.lastLogin,
               token
             }
           });
@@ -143,6 +162,48 @@ router.get('/user', auth, async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error('Get user error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE api/auth/delete-account
+// @desc    Delete user account and all associated data
+// @access  Private
+router.delete('/delete-account', auth, async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    // Find user
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Verify password if provided
+    if (password) {
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Invalid password' });
+      }
+    }
+    
+    // Get models
+    const Campaign = require('../models/Campaign');
+    const List = require('../models/List');
+    const Template = require('../models/Template');
+    
+    // Delete all user data
+    await Campaign.deleteMany({ user: req.user.id });
+    await List.deleteMany({ user: req.user.id });
+    await Template.deleteMany({ user: req.user.id });
+    
+    // Delete the user
+    await User.findByIdAndDelete(req.user.id);
+    
+    res.json({ message: 'User account and all data deleted successfully' });
+  } catch (err) {
+    console.error('Delete account error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
