@@ -73,63 +73,75 @@
         <div class="content">
             <div class="container-fluid">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="h3">Email Lists</h1>
+                    <h1 class="h3">Manage Your Lists</h1>
+                    <button id="createNewListBtn" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> Create New List
+                    </button>
                 </div>
 
-                <div class="row">
-                    <!-- Create List Form -->
+                <!-- Main content with split view -->
+                <div class="row" id="listsMainView">
+                    <!-- Left side: List management section -->
                     <div class="col-md-4 mb-4">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0">Create New List</h5>
+                                <h5 class="mb-0">Manage Your Lists</h5>
                             </div>
                             <div class="card-body">
-                                <form id="createListForm">
-                                    <div class="mb-3">
-                                        <label for="listName" class="form-label">List Name</label>
-                                        <input type="text" class="form-control" id="listName" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-plus me-2"></i> Create List
+                                <div class="list-actions mb-4">
+                                    <button id="toggleDetailsBtn" class="btn btn-outline-secondary mb-2 w-100">
+                                        <i class="fas fa-eye me-2"></i> Toggle Details
                                     </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card mt-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Import Subscribers</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="listSelect" class="form-label">Select List</label>
-                                    <select class="form-select" id="listSelect">
+                                    
+                                    <div class="d-flex mt-3">
+                                        <select id="actionSelect" class="form-select me-2">
+                                            <option value="" selected disabled>Select Action</option>
+                                            <option value="delete">Delete Selected</option>
+                                            <option value="view">View Details</option>
+                                        </select>
+                                        <button id="applyActionBtn" class="btn btn-outline-primary">Apply</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="selected-list-info d-none" id="selectedListInfo">
+                                    <div class="alert alert-info">
+                                        <h6 class="mb-1"><i class="fas fa-info-circle me-2"></i> Selected List</h6>
+                                        <p class="mb-0 selected-list-name">No list selected</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="import-section mt-4">
+                                    <h6 class="mb-3"><i class="fas fa-file-import me-2"></i> Import Emails</h6>
+                                    <select class="form-select mb-3" id="listSelect">
                                         <option value="" disabled selected>Select a list</option>
                                     </select>
-                                </div>
-                                <div class="drag-drop-area" id="dropArea">
-                                    <i class="fas fa-file-csv fa-2x mb-2"></i>
-                                    <h5>Drag & Drop CSV File</h5>
-                                    <p class="text-muted small">or click to browse files</p>
-                                    <input type="file" id="csvFileInput" class="d-none" accept=".csv">
-                                </div>
-                                <div id="uploadStatus" class="mt-3"></div>
-                                <div class="mt-3">
-                                    <p class="small text-muted">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        CSV file should have headers with at least one 'email' column.
-                                        Maximum 200 emails per list.
-                                    </p>
+                                    <div class="drag-drop-area" id="dropArea">
+                                        <i class="fas fa-file-csv fa-2x mb-2"></i>
+                                        <h5>Drag & Drop CSV File</h5>
+                                        <p class="text-muted small">or click to browse files</p>
+                                        <input type="file" id="csvFileInput" class="d-none" accept=".csv">
+                                    </div>
+                                    <div id="uploadStatus" class="mt-3"></div>
+                                    <div class="mt-3">
+                                        <p class="small text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            CSV file should have headers with at least one 'email' column.
+                                            Maximum 200 emails per list.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Email Lists -->
+                    <!-- Right side: Email Lists Display -->
                     <div class="col-md-8 mb-4">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Your Email Lists</h5>
+                                <div>
+                                    <input type="text" class="form-control form-control-sm" id="listSearchInput" placeholder="Search lists...">
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div id="emailListsContainer">
@@ -138,6 +150,84 @@
                                         <p>Loading email lists...</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Create List Form (initially hidden) -->
+                <div class="row d-none" id="createListFormView">
+                    <div class="col-md-8 mx-auto mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Create New List</h5>
+                                <button id="backToListsBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i> Back to Lists
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <form id="createListForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="listName" class="form-label">List Title <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="listName" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="listSubtitle" class="form-label">Subtitle</label>
+                                            <input type="text" class="form-control" id="listSubtitle">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="listDescription" class="form-label">Description</label>
+                                        <textarea class="form-control" id="listDescription" rows="3"></textarea>
+                                    </div>
+                                    
+                                    <hr class="my-4">
+                                    
+                                    <h6 class="mb-3">Sender Information</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="senderName" class="form-label">From Name</label>
+                                            <input type="text" class="form-control" id="senderName">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="senderEmail" class="form-label">From Email</label>
+                                            <input type="email" class="form-control" id="senderEmail">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="replyToEmail" class="form-label">Reply-To Email</label>
+                                        <input type="email" class="form-control" id="replyToEmail">
+                                    </div>
+                                    
+                                    <hr class="my-4">
+                                    
+                                    <h6 class="mb-3">Company Details</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="companyName" class="form-label">Company Name</label>
+                                            <input type="text" class="form-control" id="companyName">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="companyPhone" class="form-label">Phone Number</label>
+                                            <input type="tel" class="form-control" id="companyPhone">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="companyAddress" class="form-label">Company Address</label>
+                                        <textarea class="form-control" id="companyAddress" rows="2"></textarea>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                        <button type="button" class="btn btn-outline-secondary" id="cancelCreateListBtn">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus me-2"></i> Save List
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>

@@ -161,6 +161,60 @@ body {
     white-space: nowrap;
 }
 
+/* Updated list management styles */
+.email-list-table tr.selected {
+    background-color: rgba(74, 111, 255, 0.05);
+}
+
+.email-list-table tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.email-list-table tr:hover {
+    background-color: rgba(74, 111, 255, 0.03);
+}
+
+.email-list-table .details-row {
+    background-color: #f8f9fa;
+    display: none;
+}
+
+.email-list-table.show-details .details-row {
+    display: table-row;
+}
+
+.list-details-container {
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 8px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.history-log {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.time-col {
+    width: 80px;
+}
+
+.icon-col {
+    width: 30px;
+    text-align: center;
+}
+
 /* Analytics */
 .analytics-card {
     height: 100%;

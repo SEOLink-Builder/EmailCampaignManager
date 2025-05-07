@@ -49,7 +49,7 @@ app.use('/api/dashboard', require('./routes/analytics')); // Reuse analytics for
 
 // Root route - redirect to client
 app.get('/', (req, res) => {
-  res.redirect('/client');
+  res.redirect('/client/index.html');
 });
 
 // Handle 404
