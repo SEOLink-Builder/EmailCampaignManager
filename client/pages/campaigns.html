@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaigns - Email Campaign Tool (Beta)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="sidebar-brand">
+                    <i class="fas fa-envelope-open-text me-2"></i>
+                    Email Tool
+                </a>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="dashboard.html" class="sidebar-menu-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="lists.html" class="sidebar-menu-link">
+                        <i class="fas fa-list"></i> Lists
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="templates.html" class="sidebar-menu-link">
+                        <i class="fas fa-file-alt"></i> Templates
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="campaigns.html" class="sidebar-menu-link active">
+                        <i class="fas fa-paper-plane"></i> Campaigns
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="analytics.html" class="sidebar-menu-link">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="settings.html" class="sidebar-menu-link">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+            <div class="mt-auto p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle bg-primary text-white me-2">
+                        <span class="initials user-initials"></span>
+                    </div>
+                    <div>
+                        <div class="fw-bold user-email"></div>
+                        <div class="small text-muted">Free Account</div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3">Campaigns</h1>
+                </div>
+
+                <div class="row">
+                    <!-- Create Campaign Form -->
+                    <div class="col-md-12 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Create New Campaign</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="createCampaignForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <label for="campaignName" class="form-label">Campaign Name</label>
+                                            <input type="text" class="form-control" id="campaignName" required placeholder="Enter a name for this campaign">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="campaignList" class="form-label">Email List</label>
+                                            <select class="form-select" id="campaignList" required>
+                                                <option value="" disabled selected>Select a list</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="campaignTemplate" class="form-label">Email Template</label>
+                                            <select class="form-select" id="campaignTemplate" required>
+                                                <option value="" disabled selected>Select a template</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="scheduleDate" class="form-label">Schedule Date</label>
+                                            <input type="date" class="form-control" id="scheduleDate" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="scheduleTime" class="form-label">Schedule Time</label>
+                                            <input type="time" class="form-control" id="scheduleTime" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="sendLimit" class="form-label">Hourly Send Limit</label>
+                                            <input type="number" class="form-control" id="sendLimit" min="1" max="200" value="50" required>
+                                            <div class="form-text">Maximum emails to send per hour</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="templatePreview" class="mb-3">
+                                        <!-- Template preview will be shown here -->
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-end mt-3">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane me-2"></i> Schedule Campaign
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campaigns List -->
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Your Campaigns</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="campaignsContainer">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="fas fa-spinner fa-spin mb-3"></i>
+                                        <p>Loading campaigns...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- App scripts -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/campaigns.js"></script>
+</body>
+</html>

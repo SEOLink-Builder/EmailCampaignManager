@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Email Campaign Tool (Beta)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="sidebar-brand">
+                    <i class="fas fa-envelope-open-text me-2"></i>
+                    Email Tool
+                </a>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="dashboard.html" class="sidebar-menu-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="lists.html" class="sidebar-menu-link">
+                        <i class="fas fa-list"></i> Lists
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="templates.html" class="sidebar-menu-link">
+                        <i class="fas fa-file-alt"></i> Templates
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="campaigns.html" class="sidebar-menu-link">
+                        <i class="fas fa-paper-plane"></i> Campaigns
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="analytics.html" class="sidebar-menu-link active">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="settings.html" class="sidebar-menu-link">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+            <div class="mt-auto p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle bg-primary text-white me-2">
+                        <span class="initials user-initials"></span>
+                    </div>
+                    <div>
+                        <div class="fw-bold user-email"></div>
+                        <div class="small text-muted">Free Account</div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3">Analytics</h1>
+                    
+                    <!-- Date Range Selector -->
+                    <form id="dateRangeForm" class="d-flex">
+                        <div class="input-group me-2">
+                            <span class="input-group-text">From</span>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="input-group me-2">
+                            <span class="input-group-text">To</span>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i> Filter
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Subscribers</h6>
+                                <h3 id="totalSubscribers" class="mb-0">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Campaigns</h6>
+                                <h3 id="totalCampaigns" class="mb-0">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Emails Sent</h6>
+                                <h3 id="totalSent" class="mb-0">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Avg. Open Rate</h6>
+                                <h3 id="avgOpenRate" class="mb-0">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Avg. Click Rate</h6>
+                                <h3 id="avgClickRate" class="mb-0">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Bounce Rate</h6>
+                                <h3 id="avgBounceRate" class="mb-0">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row mb-4">
+                    <!-- Email Engagement Chart -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Email Engagement</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="emailEngagementChart" class="analytics-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Campaign Timeline Chart -->
+                    <div class="col-md-8">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Campaign Performance Over Time</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="campaignTimelineChart" class="analytics-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <!-- List Growth Chart -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Subscriber Growth</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="listGrowthChart" class="analytics-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Device Usage Chart -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Email Opens by Device</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="deviceUsageChart" class="analytics-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaign Performance Table -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Campaign Performance</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="campaignPerformanceTable" class="table-responsive">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="fas fa-spinner fa-spin mb-3"></i>
+                                        <p>Loading campaign performance data...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- App scripts -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/analytics.js"></script>
+</body>
+</html>

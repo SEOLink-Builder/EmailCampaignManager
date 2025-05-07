@@ -1,0 +1,36 @@
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Email Campaign Server"
+
+[[workflows.workflow]]
+name = "Email Campaign Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && npm install express cors morgan dotenv mongoose connect-mongo express-session jsonwebtoken nodemailer multer csv-parser express-validator && node server.js"
+waitForPort = 5000
+
+[deployment]
+run = ["sh", "-c", "cd server && npm install express cors morgan dotenv mongoose connect-mongo express-session jsonwebtoken nodemailer multer csv-parser express-validator && node server.js"]
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 8000
+externalPort = 80

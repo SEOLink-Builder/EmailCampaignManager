@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Email Campaign Tool (Beta)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="sidebar-brand">
+                    <i class="fas fa-envelope-open-text me-2"></i>
+                    Email Tool
+                </a>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="dashboard.html" class="sidebar-menu-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="lists.html" class="sidebar-menu-link">
+                        <i class="fas fa-list"></i> Lists
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="templates.html" class="sidebar-menu-link">
+                        <i class="fas fa-file-alt"></i> Templates
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="campaigns.html" class="sidebar-menu-link">
+                        <i class="fas fa-paper-plane"></i> Campaigns
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="analytics.html" class="sidebar-menu-link">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="settings.html" class="sidebar-menu-link active">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+            <div class="mt-auto p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle bg-primary text-white me-2">
+                        <span class="initials user-initials"></span>
+                    </div>
+                    <div>
+                        <div class="fw-bold user-email"></div>
+                        <div class="small text-muted">Free Account</div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3">Settings</h1>
+                </div>
+
+                <div class="row">
+                    <!-- Account Settings -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Account Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="accountSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="userEmail" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="userEmail" disabled>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="accountType" class="form-label">Account Type</label>
+                                        <input type="text" class="form-control" id="accountType" value="Free Account" disabled>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-outline-danger" id="deleteAccountBtn">
+                                            <i class="fas fa-trash me-2"></i> Delete Account
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Settings -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Email Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="emailSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="senderName" class="form-label">Sender Name</label>
+                                        <input type="text" class="form-control" id="senderName" placeholder="Your name or company name">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="replyToEmail" class="form-label">Reply-To Email</label>
+                                        <input type="email" class="form-control" id="replyToEmail" placeholder="email@example.com">
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="trackOpens" checked>
+                                            <label class="form-check-label" for="trackOpens">
+                                                Track email opens
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="trackClicks" checked>
+                                            <label class="form-check-label" for="trackClicks">
+                                                Track link clicks
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i> Save Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SMTP Settings -->
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">SMTP Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info mb-4">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    In the beta version, we're using Ethereal for email testing. You don't need to configure SMTP settings.
+                                </div>
+                                <form id="smtpSettingsForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="smtpHost" class="form-label">SMTP Host</label>
+                                            <input type="text" class="form-control" id="smtpHost" disabled value="smtp.ethereal.email">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="smtpPort" class="form-label">SMTP Port</label>
+                                            <input type="number" class="form-control" id="smtpPort" disabled value="587">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="smtpUsername" class="form-label">SMTP Username</label>
+                                            <input type="text" class="form-control" id="smtpUsername" disabled value="Auto-generated">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="smtpPassword" class="form-label">SMTP Password</label>
+                                            <input type="password" class="form-control" id="smtpPassword" disabled value="••••••••">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="smtpSecure" disabled checked>
+                                            <label class="form-check-label" for="smtpSecure">
+                                                Use secure connection (TLS)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-outline-secondary" disabled>
+                                            <i class="fas fa-check-circle me-2"></i> Test Connection
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- App scripts -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Protect this route
+            protectRoute();
+            
+            // Populate user email
+            const user = getCurrentUser();
+            if (user) {
+                document.getElementById('userEmail').value = user.email;
+                document.querySelectorAll('.user-email').forEach(el => {
+                    el.textContent = user.email;
+                });
+            }
+            
+            // Handle email settings form
+            const emailSettingsForm = document.getElementById('emailSettingsForm');
+            if (emailSettingsForm) {
+                emailSettingsForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const senderName = document.getElementById('senderName').value;
+                    const replyToEmail = document.getElementById('replyToEmail').value;
+                    const trackOpens = document.getElementById('trackOpens').checked;
+                    const trackClicks = document.getElementById('trackClicks').checked;
+                    
+                    // In a real app, you would save these settings to the server
+                    // For now, just show a success message
+                    showToast('success', 'Settings saved successfully');
+                });
+            }
+            
+            // Handle delete account button
+            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+            if (deleteAccountBtn) {
+                deleteAccountBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                        // In a real app, you would delete the account from the server
+                        // For now, just show a message and log out
+                        showToast('success', 'Account deleted successfully');
+                        setTimeout(() => {
+                            logout();
+                        }, 2000);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
