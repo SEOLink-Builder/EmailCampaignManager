@@ -221,6 +221,13 @@ router.post('/:id/optimize-subject', auth, async (req, res) => {
         code: 'OPENAI_API_KEY_MISSING'
       });
     }
+    // Check for quota exceeded errors
+    else if (err.code === 'OPENAI_QUOTA_EXCEEDED' || err.code === 'insufficient_quota') {
+      return res.status(429).json({ 
+        message: 'OpenAI API quota exceeded. Please check your billing details or try again later.',
+        code: 'OPENAI_QUOTA_EXCEEDED'
+      });
+    }
     // Check for other OpenAI errors that might indicate auth issues
     else if (err.message.includes('API key') || err.message.includes('OpenAI API')) {
       return res.status(400).json({ 
@@ -323,6 +330,17 @@ router.post('/:id/analyze-content', auth, async (req, res) => {
         strengths: []
       });
     }
+    // Check for quota exceeded errors
+    else if (err.code === 'OPENAI_QUOTA_EXCEEDED' || err.code === 'insufficient_quota') {
+      return res.status(429).json({ 
+        message: 'OpenAI API quota exceeded. Please check your billing details or try again later.',
+        code: 'OPENAI_QUOTA_EXCEEDED',
+        score: 0,
+        suggestions: ['Your OpenAI API quota has been exceeded. This is common with free tier accounts.', 
+                     'Consider upgrading your OpenAI plan or waiting until your quota refreshes.'],
+        strengths: []
+      });
+    }
     // Check for other OpenAI errors that might indicate auth issues
     else if (err.message.includes('API key') || err.message.includes('OpenAI API')) {
       return res.status(400).json({ 
@@ -361,11 +379,14 @@ router.post('/:id/preview', auth, async (req, res) => {
     // Get user information
     const user = await User.findById(req.user.id);
     
+    // Make sure req.body is an object even if it's null
+    const requestBody = req.body && typeof req.body === 'object' ? req.body : {};
+    
     // Use sample data or personalized data if provided
-    const sampleData = req.body || {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'subscriber@example.com'
+    const sampleData = {
+      firstName: requestBody.firstName || 'John',
+      lastName: requestBody.lastName || 'Doe',
+      email: requestBody.email || 'subscriber@example.com'
     };
     
     // Replace template placeholders with sample data

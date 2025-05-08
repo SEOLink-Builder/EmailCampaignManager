@@ -88,6 +88,14 @@ Please respond with a JSON object containing exactly 3 subject lines and a predi
     return subjects.map(s => typeof s === 'object' ? s.subject : s);
   } catch (error) {
     console.error('Error generating optimized subject lines:', error);
+    
+    // Check for rate limit or quota errors
+    if (error.code === 'insufficient_quota' || (error.error && error.error.type === 'insufficient_quota')) {
+      const quotaError = new Error('OpenAI API quota exceeded. Please check your billing details or try again later.');
+      quotaError.code = 'OPENAI_QUOTA_EXCEEDED';
+      throw quotaError;
+    }
+    
     return [originalSubject + ' (AI optimization failed)', originalSubject];
   }
 }
@@ -139,9 +147,17 @@ Respond with a JSON object containing:
     return JSON.parse(response.choices[0].message.content);
   } catch (error) {
     console.error('Error analyzing email content:', error);
+    
+    // Check for rate limit or quota errors
+    if (error.code === 'insufficient_quota' || (error.error && error.error.type === 'insufficient_quota')) {
+      const quotaError = new Error('OpenAI API quota exceeded. Please check your billing details or try again later.');
+      quotaError.code = 'OPENAI_QUOTA_EXCEEDED';
+      throw quotaError;
+    }
+    
     return {
       score: 0,
-      suggestions: ['Analysis failed due to an error'],
+      suggestions: ['Analysis failed due to an error: ' + (error.message || 'Unknown error')],
       strengths: []
     };
   }
@@ -185,6 +201,14 @@ Format your response as a JSON object.
     return JSON.parse(response.choices[0].message.content);
   } catch (error) {
     console.error('Error generating personalized recommendations:', error);
+    
+    // Check for rate limit or quota errors
+    if (error.code === 'insufficient_quota' || (error.error && error.error.type === 'insufficient_quota')) {
+      const quotaError = new Error('OpenAI API quota exceeded. Please check your billing details or try again later.');
+      quotaError.code = 'OPENAI_QUOTA_EXCEEDED';
+      throw quotaError;
+    }
+    
     throw error;
   }
 }

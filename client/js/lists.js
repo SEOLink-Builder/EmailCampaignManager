@@ -7,6 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize lists page
     initListsPage();
     
+    // Event listener for segmentation button
+    const segmentationBtn = document.getElementById('segmentationBtn');
+    if (segmentationBtn) {
+        segmentationBtn.addEventListener('click', openSegmentationModal);
+    }
+    
     // Event listener for drag and drop
     const dropArea = document.querySelector('.drag-drop-area');
     if (dropArea) {
@@ -90,6 +96,30 @@ async function initListsPage() {
         if (manualImportForm) {
             manualImportForm.addEventListener('submit', handleManualImport);
         }
+        
+        // Set up segmentation modal events
+        const addRuleBtn = document.getElementById('addRuleBtn');
+        if (addRuleBtn) {
+            addRuleBtn.addEventListener('click', addSegmentationRule);
+        }
+        
+        // Add event listener for the create segment button
+        const createSegmentBtn = document.getElementById('createSegmentBtn');
+        if (createSegmentBtn) {
+            createSegmentBtn.addEventListener('click', createSegment);
+        }
+        
+        // Add event listener for source list selection
+        const sourceListSelect = document.getElementById('sourceListSelect');
+        if (sourceListSelect) {
+            sourceListSelect.addEventListener('change', updateSourceListStats);
+        }
+        
+        // Set up initial remove rule event listeners
+        setupRemoveRuleBtns();
+        
+        // Add event listener for rule field changes
+        document.addEventListener('change', handleSegmentationFieldChange);
     } catch (error) {
         console.error('Error initializing lists page:', error);
         showToast('error', 'Failed to load email lists');
@@ -117,6 +147,23 @@ async function loadLists() {
                 option.value = list._id;
                 option.textContent = list.name;
                 listSelect.appendChild(option);
+            });
+        }
+        
+        // Update source list dropdown for segmentation
+        const sourceListSelect = document.getElementById('sourceListSelect');
+        if (sourceListSelect) {
+            // Clear all options except the first one
+            while (sourceListSelect.options.length > 1) {
+                sourceListSelect.remove(1);
+            }
+            
+            // Add new options
+            lists.forEach(list => {
+                const option = document.createElement('option');
+                option.value = list._id;
+                option.textContent = list.name;
+                sourceListSelect.appendChild(option);
             });
         }
         
@@ -1041,5 +1088,454 @@ async function handleManualImport(e) {
         uploadStatus.innerHTML = `<div class="alert alert-danger">
             ${error.message || 'Error importing emails.'}
         </div>`;
+    }
+}
+
+/**
+ * Open the advanced segmentation modal
+ */
+function openSegmentationModal() {
+    // Reset form fields
+    document.getElementById('newSegmentName').value = '';
+    document.getElementById('sourceListSelect').selectedIndex = 0;
+    document.getElementById('matchAllRules').checked = true;
+    
+    // Reset source list stats
+    document.getElementById('sourceListStats').innerHTML = `
+        <p class="text-muted">Select a source list to view statistics</p>
+    `;
+    
+    // Reset segmentation preview
+    document.getElementById('segmentationPreview').innerHTML = `
+        <p class="text-muted">Configure segmentation rules to see a preview</p>
+    `;
+    
+    // Reset segmentation rules
+    resetSegmentationRules();
+    
+    // Show the modal
+    const segmentationModal = new bootstrap.Modal(document.getElementById('segmentationModal'));
+    segmentationModal.show();
+}
+
+/**
+ * Reset segmentation rules to initial state
+ */
+function resetSegmentationRules() {
+    const rulesContainer = document.getElementById('segmentationRules');
+    
+    // Keep only the first rule and reset its values
+    const rules = rulesContainer.querySelectorAll('.segmentation-rule');
+    
+    // Remove all rules except the first one
+    for (let i = 1; i < rules.length; i++) {
+        rules[i].remove();
+    }
+    
+    // Reset the first rule's values
+    if (rules.length > 0) {
+        const firstRule = rules[0];
+        firstRule.querySelector('.segmentation-field').selectedIndex = 0;
+        firstRule.querySelector('.segmentation-operator').selectedIndex = 0;
+        firstRule.querySelector('.segmentation-value').value = '';
+    }
+}
+
+/**
+ * Set up event listeners for remove rule buttons
+ */
+function setupRemoveRuleBtns() {
+    document.querySelectorAll('.remove-rule').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Don't remove if it's the only rule
+            const rules = document.querySelectorAll('.segmentation-rule');
+            if (rules.length > 1) {
+                this.closest('.segmentation-rule').remove();
+                updateSegmentationPreview();
+            } else {
+                // If it's the last rule, just reset it
+                const rule = this.closest('.segmentation-rule');
+                rule.querySelector('.segmentation-field').selectedIndex = 0;
+                rule.querySelector('.segmentation-operator').selectedIndex = 0;
+                rule.querySelector('.segmentation-value').value = '';
+                updateSegmentationPreview();
+            }
+        });
+    });
+}
+
+/**
+ * Add a new segmentation rule
+ */
+function addSegmentationRule() {
+    const rulesContainer = document.getElementById('segmentationRules');
+    
+    const newRule = document.createElement('div');
+    newRule.className = 'segmentation-rule card mb-3';
+    
+    newRule.innerHTML = `
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <select class="form-select segmentation-field">
+                        <option value="" selected disabled>Select field</option>
+                        <option value="engagement_score">Engagement Score</option>
+                        <option value="open_rate">Open Rate</option>
+                        <option value="click_rate">Click Rate</option>
+                        <option value="last_opened">Last Opened</option>
+                        <option value="subscription_date">Subscription Date</option>
+                        <option value="email_domain">Email Domain</option>
+                        <option value="custom_field">Custom Field</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select segmentation-operator">
+                        <option value="" selected disabled>Select operator</option>
+                        <option value="equals">Equals</option>
+                        <option value="not_equals">Does not equal</option>
+                        <option value="greater_than">Greater than</option>
+                        <option value="less_than">Less than</option>
+                        <option value="contains">Contains</option>
+                        <option value="does_not_contain">Does not contain</option>
+                        <option value="before">Before</option>
+                        <option value="after">After</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <input type="text" class="form-control segmentation-value" placeholder="Value">
+                </div>
+                
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-rule">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    rulesContainer.appendChild(newRule);
+    
+    // Add event listener for the remove button
+    newRule.querySelector('.remove-rule').addEventListener('click', function() {
+        newRule.remove();
+        updateSegmentationPreview();
+    });
+    
+    // Add event listeners for field changes
+    newRule.querySelectorAll('select, input').forEach(el => {
+        el.addEventListener('change', updateSegmentationPreview);
+    });
+}
+
+/**
+ * Handle field changes in segmentation rules
+ * @param {Event} e - Change event
+ */
+function handleSegmentationFieldChange(e) {
+    // Check if the event target is inside a segmentation rule
+    const rule = e.target.closest('.segmentation-rule');
+    if (rule && (e.target.classList.contains('segmentation-field') || 
+                 e.target.classList.contains('segmentation-operator') ||
+                 e.target.classList.contains('segmentation-value'))) {
+        updateSegmentationPreview();
+    }
+    
+    // Check if the match all checkbox was changed
+    if (e.target.id === 'matchAllRules') {
+        updateSegmentationPreview();
+    }
+    
+    // Special handling for date fields
+    if (rule && e.target.classList.contains('segmentation-field')) {
+        const field = e.target.value;
+        const valueInput = rule.querySelector('.segmentation-value');
+        
+        if (field === 'last_opened' || field === 'subscription_date') {
+            // Convert to date input
+            valueInput.type = 'date';
+        } else {
+            // Revert to text input
+            valueInput.type = 'text';
+        }
+    }
+}
+
+/**
+ * Update source list statistics
+ */
+async function updateSourceListStats() {
+    const sourceListSelect = document.getElementById('sourceListSelect');
+    const statsContainer = document.getElementById('sourceListStats');
+    
+    if (!sourceListSelect.value) {
+        statsContainer.innerHTML = `
+            <p class="text-muted">Select a source list to view statistics</p>
+        `;
+        return;
+    }
+    
+    statsContainer.innerHTML = `
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    try {
+        const listId = sourceListSelect.value;
+        const list = await apiGet(`/api/list/${listId}`);
+        
+        // Calculate additional stats
+        const subscriberCount = list.subscriberCount || 0;
+        const activeSubscribers = Math.floor(subscriberCount * 0.85); // Approximate for demo
+        const segmentPotential = Math.floor(subscriberCount * 0.62); // Approximate for demo
+        
+        statsContainer.innerHTML = `
+            <div class="list-stats">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-2">
+                        <h3 class="mb-0">${subscriberCount}</h3>
+                        <small class="text-muted">Subscribers</small>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <h3 class="mb-0">${activeSubscribers}</h3>
+                        <small class="text-muted">Active</small>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <h3 class="mb-0">${segmentPotential}</h3>
+                        <small class="text-muted">Potential</small>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" 
+                             role="progressbar" 
+                             style="width: ${(segmentPotential/subscriberCount)*100}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <small class="text-muted">Segment Potential</small>
+                        <small>${Math.round((segmentPotential/subscriberCount)*100)}%</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Update segmentation preview as well
+        updateSegmentationPreview();
+        
+    } catch (error) {
+        console.error('Error loading list stats:', error);
+        statsContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Failed to load list statistics
+            </div>
+        `;
+    }
+}
+
+/**
+ * Update segmentation preview
+ */
+function updateSegmentationPreview() {
+    const previewContainer = document.getElementById('segmentationPreview');
+    const sourceListSelect = document.getElementById('sourceListSelect');
+    
+    // Check if source list is selected
+    if (!sourceListSelect.value) {
+        previewContainer.innerHTML = `
+            <p class="text-muted">Select a source list to see a preview</p>
+        `;
+        return;
+    }
+    
+    // Get all rules
+    const rules = document.querySelectorAll('.segmentation-rule');
+    const validRules = [];
+    
+    // Validate rules
+    rules.forEach(rule => {
+        const field = rule.querySelector('.segmentation-field').value;
+        const operator = rule.querySelector('.segmentation-operator').value;
+        const value = rule.querySelector('.segmentation-value').value;
+        
+        if (field && operator && value) {
+            validRules.push({ field, operator, value });
+        }
+    });
+    
+    if (validRules.length === 0) {
+        previewContainer.innerHTML = `
+            <p class="text-muted">Configure at least one complete rule to see a preview</p>
+        `;
+        return;
+    }
+    
+    // Get the list info
+    const listId = sourceListSelect.value;
+    const listName = sourceListSelect.options[sourceListSelect.selectedIndex].text;
+    
+    // Get the AND/OR condition
+    const matchAll = document.getElementById('matchAllRules').checked;
+    const condition = matchAll ? 'AND' : 'OR';
+    
+    // Format rules for display
+    const formattedRules = validRules.map(rule => {
+        const fieldName = rule.field.replace(/_/g, ' ');
+        let operatorText = '';
+        
+        switch (rule.operator) {
+            case 'equals': operatorText = 'equals'; break;
+            case 'not_equals': operatorText = 'does not equal'; break;
+            case 'greater_than': operatorText = 'is greater than'; break;
+            case 'less_than': operatorText = 'is less than'; break;
+            case 'contains': operatorText = 'contains'; break;
+            case 'does_not_contain': operatorText = 'does not contain'; break;
+            case 'before': operatorText = 'is before'; break;
+            case 'after': operatorText = 'is after'; break;
+            default: operatorText = rule.operator;
+        }
+        
+        return `<li><strong>${capitalize(fieldName)}</strong> ${operatorText} <strong>${rule.value}</strong></li>`;
+    }).join('');
+    
+    // Simulate segment data
+    const selectedOption = sourceListSelect.options[sourceListSelect.selectedIndex];
+    // Use real data if available, or fallback
+    const subscriberCount = (selectedOption && selectedOption.dataset && selectedOption.dataset.subscribers) ? 
+        parseInt(selectedOption.dataset.subscribers) : 50;
+    
+    // Estimate segment size based on rules
+    let potentialSubscribers = Math.floor(subscriberCount * 0.5); // Start with 50%
+    
+    // Adjust based on rule types (simple approximation)
+    if (validRules.some(r => r.field === 'engagement_score' && r.operator === 'greater_than' && parseInt(r.value) > 7)) {
+        potentialSubscribers = Math.floor(potentialSubscribers * 0.7); // Reduce by 30% for high engagement scores
+    }
+    
+    if (validRules.some(r => r.field === 'last_opened' && r.operator === 'after')) {
+        potentialSubscribers = Math.floor(potentialSubscribers * 0.8); // Reduce by 20% for recent opens
+    }
+    
+    // Ensure at least 1 subscriber
+    potentialSubscribers = Math.max(1, potentialSubscribers);
+    
+    previewContainer.innerHTML = `
+        <div class="text-start">
+            <div class="mb-3">
+                <h6>Segment Definition</h6>
+                <p>Subscribers from <strong>${listName}</strong> where:</p>
+                <ul class="mb-3">
+                    ${formattedRules}
+                </ul>
+                <div class="text-muted small">Match type: ${matchAll ? 'All conditions' : 'Any condition'} (${condition})</div>
+            </div>
+            
+            <div class="segment-stats mt-3">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Estimated segment size:</span>
+                    <span><strong>${potentialSubscribers}</strong> subscribers</span>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-success" 
+                         role="progressbar" 
+                         style="width: ${(potentialSubscribers/subscriberCount)*100}%"></div>
+                </div>
+                <small class="text-muted">${Math.round((potentialSubscribers/subscriberCount)*100)}% of subscribers match criteria</small>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Create a new segment from the configured rules
+ */
+async function createSegment() {
+    const sourceListSelect = document.getElementById('sourceListSelect');
+    const newSegmentName = document.getElementById('newSegmentName');
+    
+    // Validate inputs
+    if (!sourceListSelect.value) {
+        showToast('error', 'Please select a source list');
+        return;
+    }
+    
+    if (!newSegmentName.value.trim()) {
+        showToast('error', 'Please enter a name for your segment');
+        return;
+    }
+    
+    // Get all rules
+    const rules = document.querySelectorAll('.segmentation-rule');
+    const validRules = [];
+    
+    // Validate rules
+    rules.forEach(rule => {
+        const field = rule.querySelector('.segmentation-field').value;
+        const operator = rule.querySelector('.segmentation-operator').value;
+        const value = rule.querySelector('.segmentation-value').value;
+        
+        if (field && operator && value) {
+            validRules.push({ field, operator, value });
+        }
+    });
+    
+    if (validRules.length === 0) {
+        showToast('error', 'Please configure at least one segmentation rule');
+        return;
+    }
+    
+    const matchAll = document.getElementById('matchAllRules').checked;
+    
+    // Create segment data
+    const segmentData = {
+        name: newSegmentName.value.trim(),
+        subtitle: 'Segment',
+        description: `Generated from advanced segmentation of list "${sourceListSelect.options[sourceListSelect.selectedIndex].text}"`,
+        sourceListId: sourceListSelect.value,
+        segmentation: {
+            rules: validRules,
+            matchAll: matchAll
+        }
+    };
+    
+    try {
+        // Show loading state on the button
+        const createBtn = document.getElementById('createSegmentBtn');
+        const originalBtnText = createBtn.innerHTML;
+        createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Creating...';
+        createBtn.disabled = true;
+        
+        // Call API to create segment
+        const response = await apiPost('/api/list/segment', segmentData);
+        
+        // Hide modal
+        const segmentationModal = bootstrap.Modal.getInstance(document.getElementById('segmentationModal'));
+        segmentationModal.hide();
+        
+        // Reset create button
+        createBtn.innerHTML = originalBtnText;
+        createBtn.disabled = false;
+        
+        // Show success message
+        showToast('success', `Segment "${segmentData.name}" created successfully with ${response.subscriberCount} subscribers`);
+        
+        // Refresh lists
+        await loadLists();
+        
+    } catch (error) {
+        console.error('Error creating segment:', error);
+        
+        // Reset create button
+        const createBtn = document.getElementById('createSegmentBtn');
+        createBtn.innerHTML = '<i class="fas fa-filter me-2"></i> Create Segment';
+        createBtn.disabled = false;
+        
+        showToast('error', `Failed to create segment: ${error.message}`);
     }
 }

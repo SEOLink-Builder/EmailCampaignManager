@@ -391,4 +391,204 @@ router.post('/import-manual', [
   }
 });
 
+// @route   POST api/list/segment
+// @desc    Create a new segment from an existing list
+// @access  Private
+router.post('/segment', [
+  auth,
+  [
+    check('name', 'Segment name is required').not().isEmpty(),
+    check('sourceListId', 'Source list ID is required').not().isEmpty(),
+    check('segmentation', 'Segmentation criteria is required').exists(),
+    check('segmentation.rules', 'At least one segmentation rule is required').isArray({ min: 1 })
+  ]
+], async (req, res) => {
+  try {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+
+    const { name, subtitle, description, sourceListId, segmentation } = req.body;
+
+    // Find the source list
+    const sourceList = await List.findById(sourceListId);
+    
+    // Check if source list exists
+    if (!sourceList) {
+      return res.status(404).json({ message: 'Source list not found' });
+    }
+    
+    // Check if source list belongs to user
+    if (sourceList.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Not authorized to access this list' });
+    }
+    
+    // Apply segmentation rules to filter the subscribers
+    const segmentedSubscribers = filterSubscribersBySegmentationRules(
+      sourceList.subscribers, 
+      segmentation.rules, 
+      segmentation.matchAll || true
+    );
+    
+    // Create the new segment
+    const newSegment = new List({
+      name,
+      subtitle: subtitle || 'Segment',
+      description: description || `Segment created from ${sourceList.name}`,
+      user: req.user.id,
+      subscribers: segmentedSubscribers,
+      isSegment: true,
+      sourceListId: sourceList._id,
+      segmentation: {
+        rules: segmentation.rules,
+        matchAll: segmentation.matchAll || true
+      },
+      // Copy sender and company info from the source list
+      senderInfo: sourceList.senderInfo || {},
+      companyInfo: sourceList.companyInfo || {}
+    });
+    
+    await newSegment.save();
+    
+    // Return the new segment with subscriber count
+    const result = {
+      _id: newSegment._id,
+      name: newSegment.name,
+      subscriberCount: segmentedSubscribers.length,
+      isSegment: true,
+      sourceListName: sourceList.name
+    };
+    
+    res.json(result);
+    
+  } catch (err) {
+    console.error('Create segment error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * Filter subscribers based on segmentation rules
+ * @param {Array} subscribers - List of subscribers to filter
+ * @param {Array} rules - Segmentation rules
+ * @param {Boolean} matchAll - Whether all rules must match (AND) or any rule can match (OR)
+ * @returns {Array} - Filtered subscribers
+ */
+function filterSubscribersBySegmentationRules(subscribers, rules, matchAll = true) {
+  return subscribers.filter(subscriber => {
+    // For each subscriber, check if they match the rules
+    const ruleResults = rules.map(rule => {
+      const { field, operator, value } = rule;
+      
+      // Handle different field types
+      switch (field) {
+        case 'engagement_score':
+          // Simulate an engagement score for demo purposes
+          // In a real application, this would come from subscriber data
+          const engagementScore = subscriber.metadata?.engagement_score || 
+            Math.floor(Math.random() * 10); // Random score for demonstration
+          return compareValues(engagementScore, operator, parseFloat(value));
+          
+        case 'open_rate':
+          // Simulate open rate
+          const openRate = subscriber.metadata?.open_rate || 
+            Math.random(); // Random rate for demonstration
+          return compareValues(openRate, operator, parseFloat(value) / 100); // Convert percentage to decimal
+          
+        case 'click_rate':
+          // Simulate click rate
+          const clickRate = subscriber.metadata?.click_rate || 
+            Math.random() * 0.5; // Random rate for demonstration (lower than open rate)
+          return compareValues(clickRate, operator, parseFloat(value) / 100); // Convert percentage to decimal
+          
+        case 'last_opened':
+          // Simulate last opened date
+          const lastOpened = subscriber.metadata?.last_opened ? 
+            new Date(subscriber.metadata.last_opened) : 
+            new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000); // Random date within last 30 days
+          return compareDates(lastOpened, operator, new Date(value));
+          
+        case 'subscription_date':
+          // Use the actual subscription date
+          return compareDates(new Date(subscriber.addedAt), operator, new Date(value));
+          
+        case 'email_domain':
+          // Extract domain from email
+          const domain = subscriber.email.split('@')[1];
+          return compareStrings(domain, operator, value);
+          
+        case 'custom_field':
+          // Check if there's a custom field with this value
+          // This is simplified for demonstration
+          const hasCustomField = Object.values(subscriber.metadata || {})
+            .some(fieldValue => compareStrings(String(fieldValue), 'contains', value));
+          return hasCustomField;
+          
+        default:
+          return false;
+      }
+    });
+    
+    // Determine if subscriber matches based on matchAll parameter
+    if (matchAll) {
+      return ruleResults.every(result => result); // All rules must match (AND)
+    } else {
+      return ruleResults.some(result => result); // Any rule can match (OR)
+    }
+  });
+}
+
+/**
+ * Compare numerical values
+ * @param {number} actual - Actual value
+ * @param {string} operator - Comparison operator
+ * @param {number} expected - Expected value
+ * @returns {boolean} - Whether the comparison is true
+ */
+function compareValues(actual, operator, expected) {
+  switch (operator) {
+    case 'equals': return actual === expected;
+    case 'not_equals': return actual !== expected;
+    case 'greater_than': return actual > expected;
+    case 'less_than': return actual < expected;
+    default: return false;
+  }
+}
+
+/**
+ * Compare dates
+ * @param {Date} actual - Actual date
+ * @param {string} operator - Comparison operator
+ * @param {Date} expected - Expected date
+ * @returns {boolean} - Whether the comparison is true
+ */
+function compareDates(actual, operator, expected) {
+  switch (operator) {
+    case 'equals': return actual.getTime() === expected.getTime();
+    case 'not_equals': return actual.getTime() !== expected.getTime();
+    case 'before': return actual < expected;
+    case 'after': return actual > expected;
+    default: return false;
+  }
+}
+
+/**
+ * Compare strings
+ * @param {string} actual - Actual string
+ * @param {string} operator - Comparison operator
+ * @param {string} expected - Expected string
+ * @returns {boolean} - Whether the comparison is true
+ */
+function compareStrings(actual, operator, expected) {
+  switch (operator) {
+    case 'equals': return actual === expected;
+    case 'not_equals': return actual !== expected;
+    case 'contains': return actual.includes(expected);
+    case 'does_not_contain': return !actual.includes(expected);
+    default: return false;
+  }
+}
+
 module.exports = router;

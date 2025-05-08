@@ -21,11 +21,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd server && npm install express cors morgan dotenv mongoose connect-mongo express-session jsonwebtoken nodemailer multer csv-parser express-validator && node server.js"
+args = "cd server && node server.js"
 waitForPort = 5000
 
 [deployment]
-run = ["sh", "-c", "cd server && npm install express cors morgan dotenv mongoose connect-mongo express-session jsonwebtoken nodemailer multer csv-parser express-validator && node server.js"]
+run = ["sh", "-c", "cd server && node server.js"]
 
 [[ports]]
 localPort = 5000

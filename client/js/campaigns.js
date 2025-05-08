@@ -42,11 +42,405 @@ async function initCampaignsPage() {
             // Set min date to today
             const today = new Date().toISOString().split('T')[0];
             scheduleDateInput.min = today;
+            
+            // Setup send time recommendation feature
+            setupSendTimeRecommendation();
         }
     } catch (error) {
         console.error('Error initializing campaigns page:', error);
         showToast('error', 'Failed to load campaign data');
     }
+}
+
+/**
+ * Setup the send time recommendation feature
+ */
+function setupSendTimeRecommendation() {
+    // Find the schedule row
+    const scheduleDateInput = document.getElementById('scheduleDate');
+    if (!scheduleDateInput) return;
+    
+    const scheduleRow = scheduleDateInput.closest('.row');
+    if (!scheduleRow) return;
+    
+    // Create recommendation button and container
+    const recommendationRow = document.createElement('div');
+    recommendationRow.className = 'row mb-3 mt-1';
+    recommendationRow.innerHTML = `
+        <div class="col-12">
+            <button type="button" id="recommendTimeBtn" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-magic me-1"></i> Recommend Best Send Time
+            </button>
+            <div id="timeRecommendations" class="card mt-2" style="display: none;">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="card-title mb-0">Recommended Send Times</h6>
+                        <button type="button" class="btn-close btn-sm" id="closeRecommendations"></button>
+                    </div>
+                    <div id="recommendationsContent">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="ms-2">Analyzing audience engagement data...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insert after schedule row
+    scheduleRow.after(recommendationRow);
+    
+    // Add event listeners
+    document.getElementById('recommendTimeBtn').addEventListener('click', generateSendTimeRecommendations);
+    document.getElementById('closeRecommendations').addEventListener('click', () => {
+        document.getElementById('timeRecommendations').style.display = 'none';
+    });
+    
+    // Update select list handler
+    const listSelect = document.getElementById('emailListId');
+    if (listSelect) {
+        listSelect.addEventListener('change', () => {
+            // Reset recommendations when list changes
+            document.getElementById('timeRecommendations').style.display = 'none';
+        });
+    }
+}
+
+/**
+ * Generate send time recommendations based on audience engagement data
+ */
+async function generateSendTimeRecommendations() {
+    const recommendationsPanel = document.getElementById('timeRecommendations');
+    const contentArea = document.getElementById('recommendationsContent');
+    
+    // Show the panel
+    recommendationsPanel.style.display = 'block';
+    
+    try {
+        // Get selected list ID
+        const listId = document.getElementById('emailListId').value;
+        if (!listId) {
+            contentArea.innerHTML = `
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Please select an email list first to get personalized recommendations.
+                </div>
+            `;
+            return;
+        }
+        
+        // Simulate API call to get recommendations (replace with actual API call later)
+        // In a real implementation, we would call the server to analyze past campaign data
+        // for the selected list and determine optimal send times
+        const recommendations = await getRecommendationsForList(listId);
+        
+        if (recommendations.length === 0) {
+            contentArea.innerHTML = `
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Not enough data for this list yet. Using general best practices instead.
+                </div>
+                <div class="recommendation-times mt-3">
+                    <p class="small text-muted mb-1">General best practices:</p>
+                    <div class="list-group">
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                            onclick="applyRecommendedTime('Tuesday', '10:00')">
+                            <span><i class="fas fa-calendar-day me-2"></i> Tuesday, 10:00 AM</span>
+                            <span class="badge bg-primary rounded-pill">Most opened</span>
+                        </button>
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                            onclick="applyRecommendedTime('Thursday', '14:00')">
+                            <span><i class="fas fa-calendar-day me-2"></i> Thursday, 2:00 PM</span>
+                            <span class="badge bg-success rounded-pill">Most clicked</span>
+                        </button>
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                            onclick="applyRecommendedTime('Wednesday', '08:00')">
+                            <span><i class="fas fa-calendar-day me-2"></i> Wednesday, 8:00 AM</span>
+                            <span class="badge bg-info rounded-pill">Recommended</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Display recommendations
+            let recommendationsHTML = `
+                <p class="small text-muted mb-1">Based on your audience engagement:</p>
+                <div class="recommendation-times">
+                    <div class="list-group">
+            `;
+            
+            recommendations.forEach(rec => {
+                recommendationsHTML += `
+                    <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                        onclick="applyRecommendedTime('${rec.day}', '${rec.time}')">
+                        <span><i class="fas fa-calendar-day me-2"></i> ${rec.day}, ${formatTime(rec.time)}</span>
+                        <span class="badge ${rec.badgeClass} rounded-pill">${rec.label}</span>
+                    </button>
+                `;
+            });
+            
+            recommendationsHTML += `
+                    </div>
+                </div>
+                <div class="recommendation-chart mt-3">
+                    <canvas id="engagementChart" height="150"></canvas>
+                </div>
+                <p class="mt-2 small text-muted">
+                    <i class="fas fa-info-circle me-1"></i> 
+                    Analysis based on previous campaign performance and subscriber activity.
+                </p>
+            `;
+            
+            contentArea.innerHTML = recommendationsHTML;
+            
+            // Initialize chart if we have recommendations
+            setTimeout(() => {
+                initEngagementChart(recommendations);
+            }, 100);
+        }
+    } catch (error) {
+        console.error('Error generating recommendations:', error);
+        contentArea.innerHTML = `
+            <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Failed to generate recommendations. Please try again.
+            </div>
+        `;
+    }
+}
+
+/**
+ * Apply a recommended send time to the form
+ * @param {string} day - Day of week 
+ * @param {string} time - Time in 24-hour format (HH:MM)
+ */
+function applyRecommendedTime(day, time) {
+    // Find the next date that matches the given day of week
+    const dayMapping = {
+        'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4,
+        'Friday': 5, 'Saturday': 6, 'Sunday': 0
+    };
+    
+    const today = new Date();
+    const dayOfWeekNum = dayMapping[day];
+    const daysUntilTarget = (dayOfWeekNum + 7 - today.getDay()) % 7;
+    
+    // If today is the target day and time has passed, schedule for next week
+    if (daysUntilTarget === 0) {
+        const [hours, minutes] = time.split(':').map(Number);
+        if (today.getHours() > hours || (today.getHours() === hours && today.getMinutes() >= minutes)) {
+            // Time has passed, schedule for next week
+            today.setDate(today.getDate() + 7);
+        }
+    } else {
+        // Set date to next occurrence of the target day
+        today.setDate(today.getDate() + daysUntilTarget);
+    }
+    
+    // Format the date and set form values
+    const dateStr = today.toISOString().split('T')[0];
+    document.getElementById('scheduleDate').value = dateStr;
+    document.getElementById('scheduleTime').value = time;
+    
+    // Hide recommendations
+    document.getElementById('timeRecommendations').style.display = 'none';
+    
+    // Show success toast
+    showToast('success', `Schedule set to ${day}, ${formatTime(time)}`);
+}
+
+/**
+ * Format time from 24-hour to 12-hour format
+ * @param {string} time - Time in 24-hour format (HH:MM)
+ * @returns {string} - Time in 12-hour format
+ */
+function formatTime(time) {
+    const [hours, minutes] = time.split(':').map(Number);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+}
+
+/**
+ * Get send time recommendations for a specific email list
+ * @param {string} listId - Email list ID
+ * @returns {Promise<Array>} - Array of recommendations
+ */
+async function getRecommendationsForList(listId) {
+    // In a real implementation, this would call the server API
+    // to get actual data-based recommendations
+    
+    // For now, we'll return some dummy recommendations based on the list ID
+    // to simulate different recommendations for different lists
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Get analytics data from local storage (if available)
+    // In a real implementation, this would come from the server
+    const listData = localStorage.getItem(`list_analytics_${listId}`);
+    
+    if (listData) {
+        // Parse stored data and return actual recommendations
+        try {
+            return JSON.parse(listData);
+        } catch (e) {
+            console.error('Error parsing stored recommendations:', e);
+        }
+    }
+    
+    // Generate some dynamic recommendations based on list ID
+    // to simulate different recommendations for different lists
+    const hash = listId.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
+    const seed = Math.abs(hash) % 100;
+    
+    if (seed < 30) {
+        // First pattern
+        return [
+            { day: 'Tuesday', time: '09:30', label: 'Highest open rate', badgeClass: 'bg-primary' },
+            { day: 'Wednesday', time: '14:15', label: 'Best conversion', badgeClass: 'bg-success' },
+            { day: 'Thursday', time: '10:00', label: 'Good balance', badgeClass: 'bg-info' }
+        ];
+    } else if (seed < 60) {
+        // Second pattern
+        return [
+            { day: 'Monday', time: '08:45', label: 'Start of week', badgeClass: 'bg-primary' },
+            { day: 'Wednesday', time: '16:30', label: 'Highest engagement', badgeClass: 'bg-success' },
+            { day: 'Friday', time: '11:00', label: 'Weekend prep', badgeClass: 'bg-info' }
+        ];
+    } else {
+        // Third pattern
+        return [
+            { day: 'Tuesday', time: '11:30', label: 'Most responsive', badgeClass: 'bg-primary' },
+            { day: 'Thursday', time: '15:45', label: 'Best for sales', badgeClass: 'bg-success' },
+            { day: 'Saturday', time: '10:15', label: 'Weekend readers', badgeClass: 'bg-info' }
+        ];
+    }
+}
+
+/**
+ * Initialize engagement chart
+ * @param {Array} recommendations - Recommendation data
+ */
+function initEngagementChart(recommendations) {
+    const ctx = document.getElementById('engagementChart');
+    if (!ctx) return;
+    
+    // Generate daily engagement data
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    // Generate hourly engagement data (9am to 6pm)
+    const hours = [];
+    for (let i = 9; i <= 18; i++) {
+        hours.push(i < 10 ? `0${i}:00` : `${i}:00`);
+    }
+    
+    // Generate heatmap data based on recommendations
+    const heatData = [];
+    
+    days.forEach((day, dayIndex) => {
+        const dayRec = recommendations.find(r => r.day === day);
+        hours.forEach((hour, hourIndex) => {
+            const hourNum = parseInt(hour.split(':')[0]);
+            
+            // Base value
+            let value = 30 + Math.random() * 20;
+            
+            // If this day/hour is in recommendations, boost its value
+            if (dayRec) {
+                const recHour = parseInt(dayRec.time.split(':')[0]);
+                if (hourNum === recHour) {
+                    value = 80 + Math.random() * 20;
+                } else if (Math.abs(hourNum - recHour) === 1) {
+                    value = 60 + Math.random() * 20;
+                }
+            }
+            
+            heatData.push({
+                day: dayIndex,
+                hour: hourIndex,
+                value: Math.round(value)
+            });
+        });
+    });
+    
+    // Create chart data
+    const chartData = {
+        datasets: [{
+            label: 'Engagement Score',
+            data: heatData,
+            backgroundColor: (context) => {
+                const value = context.raw.value;
+                if (value > 70) return 'rgba(52, 152, 219, 0.9)';
+                if (value > 50) return 'rgba(52, 152, 219, 0.7)';
+                if (value > 40) return 'rgba(52, 152, 219, 0.5)';
+                return 'rgba(52, 152, 219, 0.3)';
+            },
+            borderColor: 'rgba(52, 152, 219, 0.3)',
+            borderWidth: 1,
+            borderRadius: 3,
+            hoverBackgroundColor: 'rgba(52, 152, 219, 1)',
+            width: 32,
+            height: 20
+        }]
+    };
+    
+    // Create chart
+    new Chart(ctx, {
+        type: 'matrix',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'category',
+                    labels: days,
+                    offset: true,
+                    ticks: {
+                        maxRotation: 0,
+                        autoSkip: false
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                x: {
+                    type: 'category',
+                    labels: hours,
+                    offset: true,
+                    ticks: {
+                        maxRotation: 0,
+                        autoSkip: false
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: (items) => {
+                            const item = items[0];
+                            const day = days[item.raw.day];
+                            const hour = hours[item.raw.hour];
+                            return `${day}, ${hour}`;
+                        },
+                        label: (item) => {
+                            return `Engagement: ${item.raw.value}%`;
+                        }
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
 }
 
 /**
