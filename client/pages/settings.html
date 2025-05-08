@@ -401,6 +401,87 @@
                     <!-- Advanced Tab -->
                     <div class="tab-pane fade" id="advanced-tab-pane" role="tabpanel" aria-labelledby="advanced-tab" tabindex="0">
                         <div class="row">
+                            <!-- AI Integration Settings -->
+                            <div class="col-md-12 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">AI Integration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-primary mb-4">
+                                            <div class="d-flex">
+                                                <div class="me-3">
+                                                    <i class="fas fa-robot fa-2x text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="alert-heading">AI-Powered Email Optimization</h6>
+                                                    <p class="mb-0">Connect your OpenAI API key to enable AI-powered features such as subject line optimization and content analysis. Your key remains encrypted and secure.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- AI Status Indicator -->
+                                        <div id="aiStatusIndicator" class="alert alert-warning mb-4 d-none">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="alert-heading mb-1">AI Features Disabled</h6>
+                                                    <p class="mb-0">Please add your OpenAI API key to enable AI-powered features.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <form id="aiSettingsForm">
+                                            <div class="mb-3">
+                                                <label for="openaiApiKey" class="form-label">OpenAI API Key</label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control" id="openaiApiKey" placeholder="sk-...">
+                                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="form-text">Your API key will be encrypted and stored securely</div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">AI Features</label>
+                                                <ul class="list-group">
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>Subject Line Optimization</strong>
+                                                            <p class="mb-0 small text-muted">Generate high-converting subject lines</p>
+                                                        </div>
+                                                        <span class="badge bg-success rounded-pill">Enabled</span>
+                                                    </li>
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>Content Analysis</strong>
+                                                            <p class="mb-0 small text-muted">Get suggestions to improve email effectiveness</p>
+                                                        </div>
+                                                        <span class="badge bg-success rounded-pill">Enabled</span>
+                                                    </li>
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>Personalized Recommendations</strong>
+                                                            <p class="mb-0 small text-muted">AI-powered content tailored to your audience</p>
+                                                        </div>
+                                                        <span class="badge bg-secondary rounded-pill">Coming Soon</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <div class="d-grid mt-4">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i> Save API Key
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        
                             <!-- SMTP Settings -->
                             <div class="col-md-12 mb-4">
                                 <div class="card">
@@ -476,221 +557,6 @@
     <script src="../js/utils.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Protect this route
-            protectRoute();
-            
-            // Toggle password visibility
-            const togglePasswordButtons = document.querySelectorAll('.toggle-password');
-            if (togglePasswordButtons) {
-                togglePasswordButtons.forEach(button => {
-                    button.addEventListener('click', function() {
-                        const passwordInput = this.previousElementSibling;
-                        const icon = this.querySelector('i');
-                        
-                        // Toggle password visibility
-                        if (passwordInput.type === 'password') {
-                            passwordInput.type = 'text';
-                            icon.classList.remove('fa-eye');
-                            icon.classList.add('fa-eye-slash');
-                        } else {
-                            passwordInput.type = 'password';
-                            icon.classList.remove('fa-eye-slash');
-                            icon.classList.add('fa-eye');
-                        }
-                    });
-                });
-            }
-            
-            // Populate user data
-            const user = getCurrentUser();
-            if (user) {
-                // Basic info
-                document.getElementById('userEmail').value = user.email;
-                document.querySelectorAll('.user-email').forEach(el => {
-                    el.textContent = user.email;
-                });
-                
-                // Name (if available)
-                if (user.name) {
-                    document.getElementById('displayName').value = user.name;
-                }
-                
-                // Dates (format them nicely)
-                if (user.createdAt) {
-                    document.getElementById('accountCreated').value = formatDate(user.createdAt);
-                }
-                
-                if (user.lastLogin) {
-                    document.getElementById('lastLogin').value = formatDate(user.lastLogin);
-                }
-                
-                // Set user initials for avatar
-                const userInitials = document.querySelectorAll('.user-initials');
-                userInitials.forEach(el => {
-                    if (user.name) {
-                        const initials = user.name
-                            .split(' ')
-                            .map(n => n[0])
-                            .join('')
-                            .toUpperCase();
-                        el.textContent = initials;
-                    } else {
-                        el.textContent = user.email.substring(0, 2).toUpperCase();
-                    }
-                });
-            }
-            
-            // Handle profile form
-            const profileForm = document.getElementById('profileForm');
-            if (profileForm) {
-                profileForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    
-                    try {
-                        const displayName = document.getElementById('displayName').value;
-                        
-                        // In a real app, this would update the user's profile
-                        showToast('success', 'Profile updated successfully');
-                        
-                        // Update the stored user data
-                        const user = getCurrentUser();
-                        if (user) {
-                            user.name = displayName;
-                            sessionStorage.setItem('user', JSON.stringify(user));
-                            
-                            // Update initials
-                            document.querySelectorAll('.user-initials').forEach(el => {
-                                const initials = displayName
-                                    .split(' ')
-                                    .map(n => n[0])
-                                    .join('')
-                                    .toUpperCase();
-                                el.textContent = initials;
-                            });
-                        }
-                    } catch (error) {
-                        showToast('error', error.message || 'Failed to update profile');
-                    }
-                });
-            }
-            
-            // Handle email settings forms
-            const senderDetailsForm = document.getElementById('senderDetailsForm');
-            if (senderDetailsForm) {
-                senderDetailsForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    showToast('success', 'Sender details updated successfully');
-                });
-            }
-            
-            const emailTrackingForm = document.getElementById('emailTrackingForm');
-            if (emailTrackingForm) {
-                emailTrackingForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    showToast('success', 'Tracking preferences saved successfully');
-                });
-            }
-            
-            // Handle password change
-            const changePasswordForm = document.getElementById('changePasswordForm');
-            if (changePasswordForm) {
-                changePasswordForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    
-                    const currentPassword = document.getElementById('currentPassword').value;
-                    const newPassword = document.getElementById('newPassword').value;
-                    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-                    
-                    if (newPassword !== confirmNewPassword) {
-                        showToast('error', 'New passwords do not match');
-                        return;
-                    }
-                    
-                    // In a real app, you would call an API to change the password
-                    showToast('success', 'Password updated successfully');
-                    
-                    // Reset form
-                    changePasswordForm.reset();
-                });
-            }
-            
-            // Handle delete account button
-            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-            if (deleteAccountBtn) {
-                deleteAccountBtn.addEventListener('click', async () => {
-                    // Create modal for confirmation
-                    const modal = document.createElement('div');
-                    modal.className = 'modal fade';
-                    modal.id = 'deleteAccountModal';
-                    modal.setAttribute('tabindex', '-1');
-                    modal.innerHTML = `
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        Delete Account
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>Are you sure you want to permanently delete your account?</p>
-                                    <p class="text-danger"><strong>This will delete all your data and cannot be undone!</strong></p>
-                                    <div class="mb-3">
-                                        <label for="deleteConfirmPassword" class="form-label">Enter your password to confirm</label>
-                                        <input type="password" class="form-control" id="deleteConfirmPassword" required>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
-                                        <i class="fas fa-trash me-2"></i>
-                                        Permanently Delete Account
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    document.body.appendChild(modal);
-                    
-                    const modalInstance = new bootstrap.Modal(modal);
-                    modalInstance.show();
-                    
-                    // Handle confirm delete button
-                    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-                        const password = document.getElementById('deleteConfirmPassword').value;
-                        
-                        if (!password) {
-                            alert('Please enter your password to confirm account deletion');
-                            return;
-                        }
-                        
-                        try {
-                            // Delete account on the server
-                            await deleteAccount(password);
-                            
-                            modalInstance.hide();
-                            
-                            // Show message and log out
-                            showToast('success', 'Your account and all associated data have been deleted');
-                            setTimeout(() => {
-                                logout();
-                            }, 2000);
-                        } catch (error) {
-                            alert(error.message || 'Failed to delete account');
-                        }
-                    });
-                    
-                    // Clean up the modal when it's hidden
-                    modal.addEventListener('hidden.bs.modal', () => {
-                        document.body.removeChild(modal);
-                    });
-                });
-            }
-        });
-    </script>
+    <script src="../js/settings.js"></script>
 </body>
 </html>

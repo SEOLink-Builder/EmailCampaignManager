@@ -166,6 +166,55 @@ router.get('/user', auth, async (req, res) => {
   }
 });
 
+// @route   PUT api/auth/settings
+// @desc    Update user settings
+// @access  Private
+router.put('/settings', auth, async (req, res) => {
+  try {
+    const { settings } = req.body;
+    
+    // Find user
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Update settings
+    if (settings) {
+      user.settings = {
+        ...user.settings,
+        ...settings
+      };
+    }
+    
+    // Check if OpenAI API key was updated
+    if (settings && settings.openaiApiKey) {
+      // If key is provided, update environment variable
+      // Note: This only updates it for the current session
+      process.env.OPENAI_API_KEY = settings.openaiApiKey;
+      console.log('OpenAI API key updated');
+      
+      // Re-initialize the OpenAI client in aiService
+      try {
+        const aiService = require('../services/aiService');
+        aiService.initializeOpenAI(settings.openaiApiKey);
+      } catch (error) {
+        console.error('Error re-initializing OpenAI client:', error.message);
+      }
+    }
+    
+    await user.save();
+    
+    // Return the updated user (without password)
+    const updatedUser = await User.findById(req.user.id).select('-password');
+    res.json(updatedUser);
+  } catch (err) {
+    console.error('Update settings error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   DELETE api/auth/delete-account
 // @desc    Delete user account and all associated data
 // @access  Private

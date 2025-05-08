@@ -33,6 +33,10 @@ const UserSchema = new mongoose.Schema({
     trackClicks: {
       type: Boolean,
       default: true
+    },
+    openaiApiKey: {
+      type: String,
+      default: ''
     }
   },
   createdAt: {

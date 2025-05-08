@@ -15,10 +15,31 @@ const TemplateSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  aiOptimizedSubjects: {
+    type: [String],
+    default: []
+  },
+  selectedAiSubject: {
+    type: String,
+    default: null
+  },
+  aiSubjectScore: {
+    type: Number,
+    default: 0
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  category: {
+    type: String,
+    enum: ['promotional', 'newsletter', 'transactional', 'announcement', 'other'],
+    default: 'other'
+  },
+  tags: {
+    type: [String],
+    default: []
   },
   createdAt: {
     type: Date,
