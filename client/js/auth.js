@@ -136,6 +136,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Check if we need to show admin login info
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdmin = urlParams.get('admin') === 'true';
+    const redirectUrl = urlParams.get('redirect');
+    
+    if (isAdmin) {
+        // Add admin login indicator
+        const loginCard = document.querySelector('.card-login .card-header');
+        if (loginCard) {
+            loginCard.innerHTML = '<h4 class="mb-0">Admin Login</h4><span class="badge bg-danger ms-2">Admin Area</span>';
+        }
+        
+        // Change login form title
+        const loginTitle = document.querySelector('.card-login .card-title');
+        if (loginTitle) {
+            loginTitle.textContent = 'Enter your admin credentials';
+        }
+    }
+    
     // Check if we're on the auth page
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -150,8 +169,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Logging in...';
                 loginStatus.className = 'text-info';
                 
-                await login(emailInput.value, passwordInput.value);
-                window.location.href = '/client/pages/dashboard.html';
+                const user = await login(emailInput.value, passwordInput.value);
+                
+                // If this is an admin login request, verify role
+                if (isAdmin && user.role !== 'admin') {
+                    throw new Error('You do not have admin privileges');
+                }
+                
+                // Redirect to the appropriate page
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else if (isAdmin && user.role === 'admin') {
+                    window.location.href = '/client/admin/dashboard.html';
+                } else {
+                    window.location.href = '/client/pages/dashboard.html';
+                }
             } catch (error) {
                 loginStatus.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i> ${error.message || 'Login failed.'}`;
                 loginStatus.className = 'text-danger';

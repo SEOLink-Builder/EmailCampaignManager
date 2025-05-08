@@ -11,6 +11,9 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <!-- Custom styles -->
   <link rel="stylesheet" href="../css/styles.css">
   
@@ -22,6 +25,32 @@
       border-radius: 0.25rem;
       font-size: 0.75rem;
       margin-left: 0.5rem;
+    }
+    
+    .plan-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    
+    .plan-free {
+      background-color: #858796;
+      color: white;
+    }
+    
+    .plan-starter {
+      background-color: #f6c23e;
+      color: #5a5c69;
+    }
+    
+    .plan-pro {
+      background-color: #1cc88a;
+      color: white;
+    }
+    
+    .plan-enterprise {
+      background-color: #4e73df;
+      color: white;
     }
     
     .status-badge {
@@ -45,109 +74,27 @@
       color: white;
     }
     
-    .plan-badge {
-      background-color: #4e73df;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 0.25rem;
-      font-size: 0.75rem;
+    .metric-card {
+      transition: all 0.3s ease;
     }
     
-    .plan-pro {
-      background-color: #1cc88a;
+    .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
     
-    .plan-enterprise {
-      background-color: #4e73df;
+    .chart-container {
+      height: 300px;
     }
     
-    .plan-free {
-      background-color: #858796;
-    }
-    
-    .plan-starter {
-      background-color: #f6c23e;
-      color: #5a5c69;
-    }
-    
-    .nav-tabs .nav-link {
-      color: #6e707e;
-    }
-    
-    .nav-tabs .nav-link.active {
-      color: #4e73df;
-      font-weight: 500;
-    }
-    
-    .card-counter {
-      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-      margin: 1rem 0;
-      padding: 1.5rem;
-      border-radius: 0.35rem;
-      position: relative;
-      color: white;
-      overflow: hidden;
-      height: 100px;
-    }
-    
-    .card-counter .count-icon {
-      position: absolute;
-      right: 0.75rem;
-      top: 0.75rem;
-      font-size: 1.75rem;
-      opacity: 0.4;
-    }
-    
-    .card-counter .count-numbers {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-    
-    .card-counter .count-name {
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-      opacity: 0.8;
-    }
-    
-    .card-counter.primary {
-      background: linear-gradient(45deg, #4e73df, #3a66d6);
-    }
-    
-    .card-counter.success {
-      background: linear-gradient(45deg, #1cc88a, #18a673);
-    }
-    
-    .card-counter.warning {
-      background: linear-gradient(45deg, #f6c23e, #f5b410);
-      color: #5a5c69;
-    }
-    
-    .card-counter.danger {
-      background: linear-gradient(45deg, #e74a3b, #e52618);
-    }
-    
-    #user-table tbody tr {
+    .recent-users tr,
+    .plan-requests tr {
       cursor: pointer;
     }
     
-    .user-detail {
-      display: none;
-    }
-    
-    .message-box {
-      background-color: #f8f9fc;
-      border-left: 4px solid #4e73df;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      border-radius: 0.25rem;
-    }
-    
-    .admin-message-box {
-      background-color: #f8f9fc;
-      border-left: 4px solid #e74a3b;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      border-radius: 0.25rem;
+    .recent-users tr:hover,
+    .plan-requests tr:hover {
+      background-color: rgba(0, 123, 255, 0.05);
     }
   </style>
 </head>
@@ -159,6 +106,7 @@
         <h3>Email Campaign Tool</h3>
         <span class="admin-badge">Admin</span>
       </div>
+      
       <ul class="list-unstyled components">
         <li class="active">
           <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
@@ -200,90 +148,74 @@
       <div class="container-fluid">
         <h2 class="mb-4">Admin Dashboard</h2>
         
+        <!-- Stats Cards -->
         <div class="row mb-4">
           <div class="col-md-3">
-            <div class="card-counter primary">
-              <i class="fa fa-users count-icon"></i>
-              <span class="count-numbers" id="user-count">--</span>
-              <span class="count-name">Total Users</span>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card-counter success">
-              <i class="fa fa-paper-plane count-icon"></i>
-              <span class="count-numbers" id="campaigns-count">--</span>
-              <span class="count-name">Total Campaigns</span>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card-counter warning">
-              <i class="fa fa-list count-icon"></i>
-              <span class="count-numbers" id="lists-count">--</span>
-              <span class="count-name">Email Lists</span>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card-counter danger">
-              <i class="fa fa-file-alt count-icon"></i>
-              <span class="count-numbers" id="templates-count">--</span>
-              <span class="count-name">Templates</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-8">
-            <div class="card shadow mb-4">
-              <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">User Registrations</h6>
-              </div>
+            <div class="card shadow metric-card h-100">
               <div class="card-body">
-                <div class="chart-container" style="position: relative; height:300px;">
-                  <canvas id="registrationsChart"></canvas>
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                      Total Users
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="user-count">0</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="card shadow mb-4">
-              <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Plan Distribution</h6>
-              </div>
+          
+          <div class="col-md-3">
+            <div class="card shadow metric-card h-100">
               <div class="card-body">
-                <div class="chart-container" style="position: relative; height:300px;">
-                  <canvas id="planDistributionChart"></canvas>
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                      Active Campaigns
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="campaigns-count">0</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="fas fa-paper-plane fa-2x text-gray-300"></i>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-12">
-            <div class="card shadow mb-4">
-              <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Pending Plan Requests</h6>
-                <a href="plan-requests.html" class="btn btn-sm btn-primary">View All</a>
-              </div>
+          
+          <div class="col-md-3">
+            <div class="card shadow metric-card h-100">
               <div class="card-body">
-                <div class="table-responsive">
-                  <table class="table table-hover" id="plan-requests-table">
-                    <thead>
-                      <tr>
-                        <th>User</th>
-                        <th>Current Plan</th>
-                        <th>Requested Plan</th>
-                        <th>Request Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <!-- Populated by JavaScript -->
-                    </tbody>
-                  </table>
-                  <div id="no-plan-requests" class="text-center p-3 d-none">
-                    <p class="text-muted">No pending plan requests found.</p>
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                      Email Lists
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="lists-count">0</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="fas fa-address-book fa-2x text-gray-300"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3">
+            <div class="card shadow metric-card h-100">
+              <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                      Email Templates
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="templates-count">0</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="fas fa-envelope-open fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
@@ -291,16 +223,46 @@
           </div>
         </div>
         
-        <div class="row">
-          <div class="col-md-12">
+        <!-- Charts -->
+        <div class="row mb-4">
+          <div class="col-md-8">
             <div class="card shadow mb-4">
-              <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Recent User Registrations</h6>
-                <a href="users.html" class="btn btn-sm btn-primary">View All Users</a>
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">User Registrations</h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="registrationsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="card shadow mb-4">
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Plan Distribution</h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="planDistributionChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Users -->
+        <div class="row mb-4">
+          <div class="col-md-7">
+            <div class="card shadow">
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Users</h6>
+                <a href="users.html" class="btn btn-sm btn-primary">View All</a>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
-                  <table class="table table-hover" id="recent-users-table">
+                  <table class="table table-hover recent-users" id="recent-users-table">
                     <thead>
                       <tr>
                         <th>Name</th>
@@ -311,7 +273,55 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <!-- Populated by JavaScript -->
+                      <tr>
+                        <td colspan="5" class="text-center">
+                          <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div>
+                          <p class="mt-2">Loading users...</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Plan Requests -->
+          <div class="col-md-5">
+            <div class="card shadow h-100">
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Pending Plan Requests</h6>
+                <a href="plan-requests.html" class="btn btn-sm btn-primary">View All</a>
+              </div>
+              <div class="card-body">
+                <div id="no-plan-requests" class="d-none text-center py-4">
+                  <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                  <p>No pending plan requests</p>
+                </div>
+                
+                <div class="table-responsive">
+                  <table class="table table-hover plan-requests" id="plan-requests-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Current</th>
+                        <th>Requested</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="6" class="text-center">
+                          <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div>
+                          <p class="mt-2">Loading requests...</p>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -332,51 +342,55 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div id="plan-request-details">
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <p><strong>User:</strong> <span id="modal-user-name">--</span></p>
-                <p><strong>Email:</strong> <span id="modal-user-email">--</span></p>
-                <p><strong>Current Plan:</strong> <span id="modal-current-plan">--</span></p>
-                <p><strong>Requested Plan:</strong> <span id="modal-requested-plan">--</span></p>
-              </div>
-              <div class="col-md-6">
-                <p><strong>Request Date:</strong> <span id="modal-request-date">--</span></p>
-                <p><strong>Status:</strong> <span id="modal-status">--</span></p>
-              </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>User:</strong> <span id="modal-user-name">--</span></p>
+              <p><strong>Email:</strong> <span id="modal-user-email">--</span></p>
+              <p><strong>Current Plan:</strong> <span id="modal-current-plan">--</span></p>
+              <p><strong>Requested Plan:</strong> <span id="modal-requested-plan">--</span></p>
             </div>
-            
-            <div class="message-box">
-              <p class="mb-0"><strong>User Message:</strong></p>
+            <div class="col-md-6">
+              <p><strong>Request Date:</strong> <span id="modal-request-date">--</span></p>
+              <p><strong>Status:</strong> <span id="modal-status">--</span></p>
+            </div>
+          </div>
+          
+          <div class="card mb-3">
+            <div class="card-header">
+              <h6 class="mb-0">User Message</h6>
+            </div>
+            <div class="card-body">
               <p id="modal-user-message" class="mb-0">--</p>
             </div>
-            
-            <div class="mb-3" id="admin-response-section">
-              <label for="admin-message" class="form-label">Admin Response:</label>
-              <textarea class="form-control" id="admin-message" rows="3" placeholder="Optional message to send to the user"></textarea>
+          </div>
+          
+          <div id="admin-response-section">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Admin Response</h6>
+              </div>
+              <div class="card-body">
+                <textarea id="admin-message" class="form-control" rows="3" placeholder="Optional message to send to the user"></textarea>
+              </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-danger" id="reject-plan-btn">Reject Request</button>
-          <button type="button" class="btn btn-success" id="approve-plan-btn">Approve Request</button>
+          <button type="button" id="reject-plan-btn" class="btn btn-danger">Reject Request</button>
+          <button type="button" id="approve-plan-btn" class="btn btn-success">Approve Request</button>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Bootstrap JS, Popper.js, and jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   
   <!-- Custom scripts -->
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
-  <script src="../admin/admin.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>

@@ -5,12 +5,12 @@
 // Protect admin routes - redirect if not an admin
 async function protectAdminRoute() {
   if (!isLoggedIn()) {
-    window.location.href = '../pages/auth.html?redirect=' + encodeURIComponent(window.location.href);
+    window.location.href = '../pages/auth.html?redirect=' + encodeURIComponent(window.location.href) + '&admin=true';
     return;
   }
   
   try {
-    const user = await apiGet('/api/user/me');
+    const user = await apiGet('/api/auth/user');
     
     if (!user || user.role !== 'admin') {
       // Not an admin user
