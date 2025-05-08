@@ -17,6 +17,37 @@ const UserSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  plan: {
+    type: String,
+    enum: ['free', 'starter', 'pro', 'enterprise'],
+    default: 'free'
+  },
+  planDetails: {
+    emailsPerList: {
+      type: Number,
+      default: 100 // Free plan default
+    },
+    emailsPerHour: {
+      type: Number,
+      default: 200 // Free plan default
+    },
+    emailsPerDay: {
+      type: Number,
+      default: 500 // Free plan default
+    },
+    emailsPerMonth: {
+      type: Number,
+      default: 5000 // Free plan default
+    },
+    subscriptionStartDate: {
+      type: Date,
+      default: Date.now
+    },
+    subscriptionEndDate: {
+      type: Date,
+      default: null
+    }
+  },
   settings: {
     senderName: {
       type: String,
@@ -37,6 +68,34 @@ const UserSchema = new mongoose.Schema({
     openaiApiKey: {
       type: String,
       default: ''
+    },
+    smtp: {
+      host: {
+        type: String,
+        default: ''
+      },
+      port: {
+        type: Number,
+        default: 587
+      },
+      secure: {
+        type: Boolean,
+        default: false
+      },
+      auth: {
+        user: {
+          type: String,
+          default: ''
+        },
+        pass: {
+          type: String,
+          default: ''
+        }
+      },
+      enabled: {
+        type: Boolean,
+        default: false
+      }
     }
   },
   createdAt: {

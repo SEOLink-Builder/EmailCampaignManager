@@ -158,6 +158,45 @@ function populateEmailSettings(user) {
         if (typeof user.settings.trackClicks !== 'undefined') {
             document.getElementById('trackClicks').checked = user.settings.trackClicks;
         }
+        
+        // SMTP settings if available
+        if (user.settings.smtp) {
+            // Enable SMTP checkbox
+            const smtpEnabled = document.getElementById('smtpEnabled');
+            const smtpConfigSection = document.getElementById('smtpConfigSection');
+            
+            if (user.settings.smtp.enabled) {
+                smtpEnabled.checked = true;
+                
+                // Show the SMTP config section
+                if (smtpConfigSection) {
+                    smtpConfigSection.style.display = 'block';
+                }
+                
+                // Fill in the form fields
+                if (user.settings.smtp.host) {
+                    document.getElementById('smtpHost').value = user.settings.smtp.host;
+                }
+                
+                if (user.settings.smtp.port) {
+                    document.getElementById('smtpPort').value = user.settings.smtp.port;
+                }
+                
+                if (user.settings.smtp.auth && user.settings.smtp.auth.user) {
+                    document.getElementById('smtpUsername').value = user.settings.smtp.auth.user;
+                }
+                
+                if (user.settings.smtp.auth && user.settings.smtp.auth.pass) {
+                    // Don't show the actual password, just indicate it's set
+                    document.getElementById('smtpPassword').value = '••••••••••••••••';
+                    document.getElementById('smtpPassword').placeholder = 'Password is set (leave unchanged to keep current)';
+                }
+                
+                if (typeof user.settings.smtp.secure !== 'undefined') {
+                    document.getElementById('smtpSecure').checked = user.settings.smtp.secure;
+                }
+            }
+        }
     }
 }
 
@@ -275,6 +314,33 @@ function setupEventListeners() {
                 }
             });
         });
+    }
+    
+    // SMTP settings toggle
+    const smtpEnabledToggle = document.getElementById('smtpEnabled');
+    const smtpConfigSection = document.getElementById('smtpConfigSection');
+    
+    if (smtpEnabledToggle && smtpConfigSection) {
+        // Show/hide SMTP config section based on toggle
+        smtpEnabledToggle.addEventListener('change', function() {
+            if (this.checked) {
+                smtpConfigSection.style.display = 'block';
+            } else {
+                smtpConfigSection.style.display = 'none';
+            }
+        });
+    }
+    
+    // SMTP settings form
+    const smtpSettingsForm = document.getElementById('smtpSettingsForm');
+    if (smtpSettingsForm) {
+        smtpSettingsForm.addEventListener('submit', saveSmtpSettings);
+    }
+    
+    // Test SMTP connection button
+    const testSmtpConnectionBtn = document.getElementById('testSmtpConnection');
+    if (testSmtpConnectionBtn) {
+        testSmtpConnectionBtn.addEventListener('click', testSmtpConnection);
     }
     
     // Logout button
@@ -563,5 +629,176 @@ async function saveAISettings(e) {
     } catch (error) {
         console.error('Error saving AI settings:', error);
         showToast('error', 'Failed to update AI settings');
+    }
+}
+
+/**
+ * Save SMTP settings
+ * @param {Event} e - Submit event
+ */
+async function saveSmtpSettings(e) {
+    e.preventDefault();
+    
+    try {
+        const smtpEnabled = document.getElementById('smtpEnabled').checked;
+        
+        // If SMTP is disabled, just save that setting
+        if (!smtpEnabled) {
+            const result = await apiPut('/api/auth/settings', {
+                settings: {
+                    smtp: {
+                        enabled: false
+                    }
+                }
+            });
+            
+            if (result) {
+                showToast('success', 'SMTP settings updated successfully');
+            } else {
+                throw new Error('Failed to update SMTP settings');
+            }
+            
+            return;
+        }
+        
+        // Get form values
+        const smtpHost = document.getElementById('smtpHost').value.trim();
+        const smtpPort = parseInt(document.getElementById('smtpPort').value.trim());
+        const smtpUsername = document.getElementById('smtpUsername').value.trim();
+        const smtpPassword = document.getElementById('smtpPassword').value.trim();
+        const smtpSecure = document.getElementById('smtpSecure').checked;
+        
+        // Validate form
+        if (!smtpHost) {
+            showToast('error', 'Please enter the SMTP host');
+            return;
+        }
+        
+        if (isNaN(smtpPort) || smtpPort <= 0 || smtpPort > 65535) {
+            showToast('error', 'Please enter a valid port number (1-65535)');
+            return;
+        }
+        
+        if (!smtpUsername) {
+            showToast('error', 'Please enter the SMTP username');
+            return;
+        }
+        
+        if (!smtpPassword) {
+            showToast('error', 'Please enter the SMTP password');
+            return;
+        }
+        
+        // Update settings
+        const result = await apiPut('/api/auth/settings', {
+            settings: {
+                smtp: {
+                    host: smtpHost,
+                    port: smtpPort,
+                    secure: smtpSecure,
+                    auth: {
+                        user: smtpUsername,
+                        pass: smtpPassword
+                    },
+                    enabled: true
+                }
+            }
+        });
+        
+        if (result) {
+            showToast('success', 'SMTP settings updated successfully');
+        } else {
+            throw new Error('Failed to update SMTP settings');
+        }
+    } catch (error) {
+        console.error('Error saving SMTP settings:', error);
+        showToast('error', 'Failed to update SMTP settings: ' + (error.message || 'Unknown error'));
+    }
+}
+
+/**
+ * Test SMTP connection
+ */
+async function testSmtpConnection() {
+    try {
+        // Show testing indicator
+        const testBtn = document.getElementById('testSmtpConnection');
+        const originalBtnText = testBtn.innerHTML;
+        testBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Testing...';
+        testBtn.disabled = true;
+        
+        // Get form values for the test
+        const smtpEnabled = document.getElementById('smtpEnabled').checked;
+        
+        if (!smtpEnabled) {
+            showToast('error', 'Please enable SMTP first');
+            testBtn.innerHTML = originalBtnText;
+            testBtn.disabled = false;
+            return;
+        }
+        
+        const smtpHost = document.getElementById('smtpHost').value.trim();
+        const smtpPort = parseInt(document.getElementById('smtpPort').value.trim());
+        const smtpUsername = document.getElementById('smtpUsername').value.trim();
+        const smtpPassword = document.getElementById('smtpPassword').value.trim();
+        const smtpSecure = document.getElementById('smtpSecure').checked;
+        
+        // Basic validation
+        if (!smtpHost || !smtpUsername || !smtpPassword || isNaN(smtpPort)) {
+            showToast('error', 'Please fill in all SMTP fields');
+            testBtn.innerHTML = originalBtnText;
+            testBtn.disabled = false;
+            return;
+        }
+        
+        // Send test request to server
+        const response = await apiPost('/api/email/test-smtp', {
+            smtp: {
+                host: smtpHost,
+                port: smtpPort,
+                secure: smtpSecure,
+                auth: {
+                    user: smtpUsername,
+                    pass: smtpPassword
+                }
+            }
+        });
+        
+        if (response && response.success) {
+            // Show success message with animation
+            testBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i> Connection Successful!';
+            testBtn.classList.remove('btn-outline-primary');
+            testBtn.classList.add('btn-success');
+            
+            showToast('success', 'SMTP connection test successful!');
+            
+            // Reset button after a delay
+            setTimeout(() => {
+                testBtn.innerHTML = originalBtnText;
+                testBtn.classList.remove('btn-success');
+                testBtn.classList.add('btn-outline-primary');
+                testBtn.disabled = false;
+            }, 3000);
+        } else {
+            throw new Error(response?.error || 'Connection failed');
+        }
+    } catch (error) {
+        console.error('SMTP test error:', error);
+        
+        // Reset button and show error
+        const testBtn = document.getElementById('testSmtpConnection');
+        testBtn.innerHTML = '<i class="fas fa-times-circle me-2"></i> Test Failed';
+        testBtn.classList.remove('btn-outline-primary');
+        testBtn.classList.add('btn-danger');
+        
+        showToast('error', 'SMTP connection test failed: ' + (error.message || 'Unknown error'));
+        
+        // Reset button after a delay
+        setTimeout(() => {
+            testBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i> Test Connection';
+            testBtn.classList.remove('btn-danger');
+            testBtn.classList.add('btn-outline-primary');
+            testBtn.disabled = false;
+        }, 3000);
     }
 }

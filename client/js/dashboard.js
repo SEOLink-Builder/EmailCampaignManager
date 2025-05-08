@@ -36,13 +36,39 @@ async function initDashboard() {
 /**
  * Display user information
  */
-function displayUserInfo() {
+async function displayUserInfo() {
     const user = getCurrentUser();
     const userDisplayElements = document.querySelectorAll('.user-email');
     
     userDisplayElements.forEach(element => {
         element.textContent = user.email;
     });
+
+    // Get user's plan info
+    try {
+        const planInfo = await apiGet('/api/user/plan');
+        const accountTypeElement = document.getElementById('accountType');
+        
+        if (accountTypeElement) {
+            // Set badge color based on plan
+            let badgeClass = 'bg-secondary';
+            
+            if (planInfo.plan === 'starter') {
+                badgeClass = 'bg-info';
+            } else if (planInfo.plan === 'pro') {
+                badgeClass = 'bg-primary';
+            } else if (planInfo.plan === 'enterprise') {
+                badgeClass = 'bg-success';
+            }
+            
+            accountTypeElement.innerHTML = `
+                <span class="badge ${badgeClass}">${planInfo.planName}</span>
+            `;
+        }
+    } catch (error) {
+        console.error('Error fetching plan info:', error);
+        // If error, we'll keep the default "Free Plan" badge
+    }
 }
 
 /**

@@ -435,4 +435,66 @@ router.post('/:id/preview', auth, async (req, res) => {
   }
 });
 
+// @route   POST api/template/:id/send-test
+// @desc    Send a test email using a template
+// @access  Private
+router.post('/:id/send-test', auth, async (req, res) => {
+  try {
+    // Validate request
+    if (!req.body.recipientEmail) {
+      return res.status(400).json({ message: 'Recipient email is required' });
+    }
+
+    // Check if email service is available
+    const emailService = require('../services/emailService');
+    
+    // Get the template
+    const template = await Template.findById(req.params.id);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found' });
+    }
+    
+    if (template.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    // Send the test email
+    const result = await emailService.sendTestEmail(
+      template.id,
+      req.body.recipientEmail,
+      req.user.id
+    );
+
+    // Create a message based on provider and result
+    let message = '';
+    if (result.success) {
+      if (result.provider === 'sendgrid') {
+        message = 'Test email sent successfully with SendGrid!';
+      } else if (result.provider === 'ethereal_fallback') {
+        message = `SendGrid failed (${result.sendgridError}), but test email was sent via Ethereal. Check the preview URL to view it.`;
+      } else {
+        message = 'Test email sent successfully! Check the preview URL to view it.';
+      }
+    } else {
+      message = `Failed to send test email: ${result.error}`;
+    }
+
+    // Return the result with preview URL and provider info
+    res.json({
+      success: result.success,
+      previewUrl: result.success ? result.previewUrl : null,
+      provider: result.provider || 'ethereal',
+      message: message
+    });
+    
+  } catch (err) {
+    console.error('Send test email error:', err.message);
+    res.status(500).json({ 
+      message: 'Server error sending test email',
+      error: err.message 
+    });
+  }
+});
+
 module.exports = router;

@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
+    "@sendgrid/mail": "^8.1.5",
     "bcryptjs": "^3.0.2",
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",

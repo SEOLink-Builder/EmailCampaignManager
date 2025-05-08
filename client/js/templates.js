@@ -45,6 +45,18 @@ document.addEventListener('DOMContentLoaded', () => {
         applyCustomPreviewBtn.addEventListener('click', applyCustomPreview);
     }
     
+    // Set up send test email button in preview modal
+    const sendTestEmailBtn = document.getElementById('sendTestEmailBtn');
+    if (sendTestEmailBtn) {
+        sendTestEmailBtn.addEventListener('click', showSendTestEmailModal);
+    }
+    
+    // Set up send test email submit button in test email modal
+    const sendTestEmailSubmitBtn = document.getElementById('sendTestEmailSubmitBtn');
+    if (sendTestEmailSubmitBtn) {
+        sendTestEmailSubmitBtn.addEventListener('click', sendTestEmail);
+    }
+    
     // Set up AI Subject Optimizer button
     const aiSubjectBtn = document.getElementById('aiSubjectBtn');
     if (aiSubjectBtn) {
@@ -1242,8 +1254,9 @@ async function previewTemplate(templateId, customData = null) {
         document.getElementById('templatePreviewLoading').style.display = 'block';
         document.getElementById('templatePreviewContent').style.display = 'none';
         
-        // Store the template ID for customize feature
+        // Store the template ID for customize feature and test email feature
         document.getElementById('previewTemplateId').value = templateId;
+        document.getElementById('testEmailTemplateId').value = templateId;
         
         // Fetch the preview - ensure we're sending an empty object instead of null
         const previewData = customData || {}; 
@@ -1267,6 +1280,102 @@ async function previewTemplate(templateId, customData = null) {
         if (previewModal) {
             previewModal.hide();
         }
+    }
+}
+
+/**
+ * Show the send test email modal
+ */
+function showSendTestEmailModal() {
+    // Hide any previous success/error messages
+    document.getElementById('testEmailLoading').style.display = 'none';
+    document.getElementById('testEmailSuccess').style.display = 'none';
+    document.getElementById('testEmailError').style.display = 'none';
+    
+    // Reset the form
+    document.getElementById('sendTestEmailForm').reset();
+    
+    // Get the current user's email
+    const user = getCurrentUser();
+    if (user && user.email) {
+        document.getElementById('testEmailRecipient').value = user.email;
+    }
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('sendTestEmailModal'));
+    modal.show();
+}
+
+/**
+ * Send a test email
+ */
+async function sendTestEmail() {
+    try {
+        // Get form data
+        const templateId = document.getElementById('testEmailTemplateId').value;
+        const recipientEmail = document.getElementById('testEmailRecipient').value;
+        
+        // Validate
+        if (!templateId) {
+            throw new Error('Template ID is missing');
+        }
+        
+        if (!recipientEmail || !validateEmail(recipientEmail)) {
+            throw new Error('Please enter a valid email address');
+        }
+        
+        // Show loading
+        document.getElementById('testEmailLoading').style.display = 'block';
+        document.getElementById('testEmailSuccess').style.display = 'none';
+        document.getElementById('testEmailError').style.display = 'none';
+        
+        // Disable submit button
+        const submitBtn = document.getElementById('sendTestEmailSubmitBtn');
+        submitBtn.disabled = true;
+        
+        // Send the request
+        const response = await apiPost(`/api/template/${templateId}/send-test`, {
+            recipientEmail: recipientEmail
+        });
+        
+        // Show success or error
+        if (response.success) {
+            // Create success message with provider info
+            let successMessage = response.message || 'Test email sent successfully!';
+            
+            // Add provider badge if available
+            const providerBadge = response.provider ? 
+                `<span class="badge ${response.provider === 'sendgrid' ? 'bg-success' : 'bg-primary'} ms-2">
+                    ${response.provider === 'sendgrid' ? 'SendGrid' : 'Ethereal'}
+                </span>` : '';
+            
+            document.getElementById('testEmailSuccessMessage').innerHTML = successMessage + providerBadge;
+            
+            // Set preview link if available
+            if (response.previewUrl) {
+                const previewLink = document.getElementById('testEmailPreviewLink');
+                previewLink.href = response.previewUrl;
+                previewLink.parentElement.style.display = 'block';
+            } else {
+                document.getElementById('testEmailPreviewLink').parentElement.style.display = 'none';
+            }
+            
+            document.getElementById('testEmailSuccess').style.display = 'block';
+            showToast('success', 'Test email sent successfully');
+        } else {
+            throw new Error(response.message || 'Failed to send test email');
+        }
+    } catch (error) {
+        console.error('Error sending test email:', error);
+        document.getElementById('testEmailErrorMessage').textContent = error.message || 'Failed to send test email';
+        document.getElementById('testEmailError').style.display = 'block';
+        showToast('error', 'Failed to send test email');
+    } finally {
+        // Hide loading
+        document.getElementById('testEmailLoading').style.display = 'none';
+        
+        // Re-enable submit button
+        document.getElementById('sendTestEmailSubmitBtn').disabled = false;
     }
 }
 

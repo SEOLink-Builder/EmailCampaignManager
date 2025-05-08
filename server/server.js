@@ -91,11 +91,13 @@ app.use('/', express.static(path.join(__dirname, '..'))); // Serve files from th
 
 // Routes
 app.use('/api/auth', authLimiter, require('./routes/auth')); // Apply stricter rate limiting to auth routes
+app.use('/api/user', require('./routes/user')); // User profile and plan management
 app.use('/api/list', require('./routes/list'));
 app.use('/api/template', require('./routes/template'));
 app.use('/api/campaign', require('./routes/campaign'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/dashboard', require('./routes/analytics')); // Reuse analytics for dashboard data
+app.use('/api/email', require('./routes/email')); // SMTP testing and email utilities
 
 // Test route
 app.get('/test', (req, res) => {

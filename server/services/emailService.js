@@ -1,8 +1,15 @@
 const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 const Campaign = require('../models/Campaign');
 const List = require('../models/List');
 const Template = require('../models/Template');
 const User = require('../models/User');
+
+// Initialize SendGrid if API key is available
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('SendGrid initialized successfully');
+}
 
 // Track scheduled jobs by campaign ID
 const scheduledJobs = new Map();
@@ -57,12 +64,32 @@ const createTransporter = async () => {
   }
 };
 
+// Create a user-specific transporter if they have SMTP settings
+const createUserTransporter = (user) => {
+  if (user?.settings?.smtp?.enabled && 
+      user.settings.smtp.host && 
+      user.settings.smtp.auth?.user && 
+      user.settings.smtp.auth?.pass) {
+    
+    console.log(`Creating custom SMTP transporter for user ${user.email}`);
+    
+    return nodemailer.createTransport({
+      host: user.settings.smtp.host,
+      port: user.settings.smtp.port || 587,
+      secure: user.settings.smtp.secure || false,
+      auth: {
+        user: user.settings.smtp.auth.user,
+        pass: user.settings.smtp.auth.pass
+      }
+    });
+  }
+  
+  return null;
+};
+
 // Process a single email
 const processEmail = async (subscriber, campaign, template, user) => {
   try {
-    // Create the transporter
-    const emailTransporter = await createTransporter();
-    
     // Replace template placeholders with subscriber data
     let emailContent = template.content;
     let emailSubject = template.subject;
@@ -83,22 +110,64 @@ const processEmail = async (subscriber, campaign, template, user) => {
     const senderName = user.settings?.senderName || 'Email Campaign Tool';
     const replyToEmail = user.settings?.replyToEmail || user.email;
     
-    // Send the email
-    const mailOptions = {
-      from: `"${senderName}" <${emailTransporter.options.auth.user}>`,
-      to: subscriber.email,
-      subject: emailSubject,
-      html: emailContent,
-      replyTo: replyToEmail
-    };
+    // First try to use the user's custom SMTP settings
+    let userTransporter = createUserTransporter(user);
+    let fromEmail;
+    let previewUrl = null;
+    let info;
     
-    const info = await emailTransporter.sendMail(mailOptions);
-    
-    // For Ethereal, log the URL where the email can be viewed
-    console.log(`Email sent to ${subscriber.email}`);
-    console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-    
-    return { success: true, messageId: info.messageId };
+    if (userTransporter) {
+      // Use user's custom email 
+      fromEmail = user.settings.smtp.auth.user;
+      
+      // Send the email with user's SMTP settings
+      const mailOptions = {
+        from: `"${senderName}" <${fromEmail}>`,
+        to: subscriber.email,
+        subject: emailSubject,
+        html: emailContent,
+        replyTo: replyToEmail
+      };
+      
+      info = await userTransporter.sendMail(mailOptions);
+      console.log(`Email sent to ${subscriber.email} using custom SMTP`);
+      
+      // Return result with success
+      return { 
+        success: true, 
+        messageId: info.messageId,
+        provider: 'custom_smtp',
+        smtpHost: user.settings.smtp.host
+      };
+    } else {
+      // Fall back to Ethereal for testing
+      const emailTransporter = await createTransporter();
+      
+      // Send the email
+      const mailOptions = {
+        from: `"${senderName}" <${emailTransporter.options.auth.user}>`,
+        to: subscriber.email,
+        subject: emailSubject,
+        html: emailContent,
+        replyTo: replyToEmail
+      };
+      
+      info = await emailTransporter.sendMail(mailOptions);
+      
+      // For Ethereal, get the URL where the email can be viewed
+      previewUrl = nodemailer.getTestMessageUrl(info);
+      
+      // Log information
+      console.log(`Email sent to ${subscriber.email} using Ethereal`);
+      console.log(`Preview URL: ${previewUrl}`);
+      
+      return { 
+        success: true, 
+        messageId: info.messageId,
+        previewUrl: previewUrl,
+        provider: 'ethereal'
+      };
+    }
   } catch (error) {
     console.error(`Error sending email to ${subscriber.email}:`, error);
     return { success: false, error: error.message };
@@ -277,8 +346,157 @@ const initService = async () => {
 // Initialize the service when the module is loaded
 initService();
 
+// Send a test email using user's SMTP settings, SendGrid, or Ethereal
+const sendTestEmail = async (templateId, recipientEmail, userId) => {
+  try {
+    // Get the template, user, and create a test subscriber
+    const template = await Template.findById(templateId);
+    const user = await User.findById(userId);
+    
+    if (!template) {
+      throw new Error('Template not found');
+    }
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    // Create a test subscriber with the provided email
+    const testSubscriber = {
+      email: recipientEmail,
+      firstName: 'Test',
+      lastName: 'User',
+      status: 'active'
+    };
+    
+    // Replace template placeholders with subscriber data
+    let emailContent = template.content;
+    let emailSubject = template.subject;
+    
+    // Replace basic placeholders
+    emailContent = emailContent
+      .replace(/{{firstName}}/g, testSubscriber.firstName || '')
+      .replace(/{{lastName}}/g, testSubscriber.lastName || '')
+      .replace(/{{email}}/g, testSubscriber.email)
+      .replace(/{{unsubscribe}}/g, 'https://example.com/unsubscribe?email=' + encodeURIComponent(testSubscriber.email));
+    
+    emailSubject = emailSubject
+      .replace(/{{firstName}}/g, testSubscriber.firstName || '')
+      .replace(/{{lastName}}/g, testSubscriber.lastName || '')
+      .replace(/{{email}}/g, testSubscriber.email);
+    
+    // Get sender name and reply-to from user settings or use defaults
+    const senderName = user.settings?.senderName || 'Email Campaign Tool';
+    const replyToEmail = user.settings?.replyToEmail || user.email;
+
+    // First, try to use user's SMTP settings if available
+    const userTransporter = createUserTransporter(user);
+    if (userTransporter) {
+      try {
+        console.log(`Sending test email via user's SMTP settings (${user.settings.smtp.host})`);
+        
+        // Use user's custom email settings
+        const fromEmail = user.settings.smtp.auth.user;
+        
+        // Send the test email with user's SMTP
+        const mailOptions = {
+          from: `"${senderName}" <${fromEmail}>`,
+          to: recipientEmail,
+          subject: emailSubject,
+          html: emailContent,
+          replyTo: replyToEmail
+        };
+        
+        const info = await userTransporter.sendMail(mailOptions);
+        
+        console.log(`Custom SMTP test email sent to ${recipientEmail}`);
+        
+        return {
+          success: true,
+          messageId: info.messageId,
+          provider: 'custom_smtp',
+          smtpHost: user.settings.smtp.host,
+          previewUrl: null // Custom SMTP doesn't provide preview URLs
+        };
+      } catch (smtpError) {
+        console.error('Custom SMTP error:', smtpError);
+        // If custom SMTP fails, continue to next options
+      }
+    }
+
+    // Second, try SendGrid if available
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        console.log('Sending test email via SendGrid');
+        
+        // Prepare the SendGrid message
+        const msg = {
+          to: recipientEmail,
+          from: {
+            email: 'noreply@emailcampaigntool.com',
+            name: senderName
+          },
+          subject: emailSubject,
+          html: emailContent,
+          replyTo: replyToEmail
+        };
+        
+        // Send email with SendGrid
+        await sgMail.send(msg);
+        
+        console.log(`SendGrid test email sent to ${recipientEmail}`);
+        
+        return {
+          success: true,
+          messageId: `sg_${Date.now()}`,
+          provider: 'sendgrid',
+          previewUrl: null // SendGrid doesn't provide preview URLs
+        };
+      } catch (sgError) {
+        console.error('SendGrid error:', sgError);
+        // If SendGrid fails, fall back to Ethereal
+      }
+    }
+    
+    // Finally, fall back to Ethereal for testing
+    console.log('Using Ethereal for test email');
+    
+    // Create Ethereal transporter
+    const emailTransporter = await createTransporter();
+    
+    // Send the email
+    const mailOptions = {
+      from: `"${senderName}" <${emailTransporter.options.auth.user}>`,
+      to: recipientEmail,
+      subject: emailSubject,
+      html: emailContent,
+      replyTo: replyToEmail
+    };
+    
+    const info = await emailTransporter.sendMail(mailOptions);
+    
+    // For Ethereal, get the URL where the email can be viewed
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    
+    // Log information
+    console.log(`Ethereal test email sent to ${recipientEmail}`);
+    console.log(`Preview URL: ${previewUrl}`);
+    
+    return { 
+      success: true, 
+      messageId: info.messageId,
+      previewUrl: previewUrl,
+      provider: 'ethereal'
+    };
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   scheduleCampaign,
   cancelCampaign,
-  processBatch
+  processBatch,
+  sendTestEmail
 };

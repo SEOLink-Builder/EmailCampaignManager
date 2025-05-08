@@ -489,54 +489,90 @@
                                         <h5 class="mb-0">SMTP Settings</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="alert alert-info mb-4">
+                                        <div class="alert alert-success mb-4">
                                             <div class="d-flex">
                                                 <div class="me-3">
-                                                    <i class="fas fa-info-circle fa-2x text-info"></i>
+                                                    <i class="fas fa-check-circle fa-2x text-success"></i>
                                                 </div>
                                                 <div>
-                                                    <h6 class="alert-heading">Using Test SMTP in Beta</h6>
-                                                    <p class="mb-0">In the beta version, we're using Ethereal for email testing. Custom SMTP configuration will be available in the full release.</p>
+                                                    <h6 class="alert-heading">SMTP Configuration Now Available!</h6>
+                                                    <p class="mb-0">You can now use your own email account to send emails. Configure your SMTP settings below to use your personal or company email address. If not configured, we'll use Ethereal for email testing.</p>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <form id="smtpSettingsForm">
-                                            <div class="row mb-3">
-                                                <div class="col-md-6">
-                                                    <label for="smtpHost" class="form-label">SMTP Host</label>
-                                                    <input type="text" class="form-control" id="smtpHost" disabled value="smtp.ethereal.email">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="smtpPort" class="form-label">SMTP Port</label>
-                                                    <input type="number" class="form-control" id="smtpPort" disabled value="587">
-                                                </div>
-                                            </div>
-                                            <div class="row mb-3">
-                                                <div class="col-md-6">
-                                                    <label for="smtpUsername" class="form-label">SMTP Username</label>
-                                                    <input type="text" class="form-control" id="smtpUsername" disabled value="Auto-generated">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="smtpPassword" class="form-label">SMTP Password</label>
-                                                    <input type="password" class="form-control" id="smtpPassword" disabled value="••••••••">
-                                                </div>
-                                            </div>
                                             <div class="mb-3">
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="smtpSecure" disabled checked>
-                                                    <label class="form-check-label" for="smtpSecure">
-                                                        Use secure connection (TLS)
+                                                <div class="form-check form-switch mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="smtpEnabled">
+                                                    <label class="form-check-label" for="smtpEnabled">
+                                                        <strong>Use my own email provider (SMTP)</strong>
                                                     </label>
+                                                </div>
+                                                <p class="text-muted small">
+                                                    Configure your own email provider to send emails from your domain.
+                                                    This allows you to use services like Gmail, Office 365, or any other SMTP provider.
+                                                </p>
+                                                <div class="alert alert-info small">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    If you don't configure this, we'll use a test email service that allows you to preview emails but doesn't actually deliver them.
+                                                </div>
+                                            </div>
+                                            
+                                            <div id="smtpConfigSection" style="display: none;">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-8">
+                                                        <label for="smtpHost" class="form-label">SMTP Host</label>
+                                                        <input type="text" class="form-control" id="smtpHost" placeholder="e.g., smtp.gmail.com">
+                                                        <div class="form-text">Your email provider's SMTP server address</div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="smtpPort" class="form-label">SMTP Port</label>
+                                                        <input type="number" class="form-control" id="smtpPort" value="587">
+                                                        <div class="form-text">Common ports: 25, 465, 587</div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label for="smtpUsername" class="form-label">SMTP Username</label>
+                                                        <input type="text" class="form-control" id="smtpUsername" placeholder="your.email@example.com">
+                                                        <div class="form-text">Usually your email address</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="smtpPassword" class="form-label">SMTP Password</label>
+                                                        <input type="password" class="form-control" id="smtpPassword" placeholder="Your password or app password">
+                                                        <div class="form-text">For Gmail, use an app password</div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="smtpSecure">
+                                                        <label class="form-check-label" for="smtpSecure">
+                                                            Use secure connection (SSL/TLS)
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text">Enable for port 465, disable for port 587 (TLS will still be used)</div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <div class="alert alert-light border p-2">
+                                                        <h6 class="mb-2">SMTP Server Settings For Common Providers:</h6>
+                                                        <ul class="mb-0 ps-3 small">
+                                                            <li><strong>Gmail:</strong> smtp.gmail.com, Port 587, Username: your Gmail address</li>
+                                                            <li><strong>Outlook/Office 365:</strong> smtp.office365.com, Port 587</li>
+                                                            <li><strong>Yahoo Mail:</strong> smtp.mail.yahoo.com, Port 587</li>
+                                                            <li><strong>Zoho Mail:</strong> smtp.zoho.com, Port 587</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="d-flex justify-content-between">
-                                                <button type="button" class="btn btn-outline-secondary" disabled>
-                                                    <i class="fas fa-paper-plane me-2"></i> Send Test Email
-                                                </button>
-                                                <button type="button" class="btn btn-outline-secondary" disabled>
+                                                <button type="button" class="btn btn-outline-primary" id="testSmtpConnection">
                                                     <i class="fas fa-check-circle me-2"></i> Test Connection
+                                                </button>
+                                                <button type="submit" class="btn btn-primary" id="saveSmtpSettings">
+                                                    <i class="fas fa-save me-2"></i> Save Settings
                                                 </button>
                                             </div>
                                         </form>
@@ -557,6 +593,7 @@
     <script src="../js/utils.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
+    <script src="../js/tutorial.js"></script>
     <script src="../js/settings.js"></script>
 </body>
 </html>

@@ -162,8 +162,11 @@
                 <div class="modal-footer">
                     <div class="d-flex justify-content-between w-100">
                         <div>
-                            <button type="button" class="btn btn-outline-primary" id="customizePreviewBtn">
+                            <button type="button" class="btn btn-outline-primary me-2" id="customizePreviewBtn">
                                 <i class="fas fa-user-edit me-2"></i> Customize Preview
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="sendTestEmailBtn">
+                                <i class="fas fa-paper-plane me-2"></i> Send Test Email
                             </button>
                         </div>
                         <div>
@@ -270,6 +273,63 @@
         </div>
     </div>
     
+    <!-- Send Test Email Modal -->
+    <div class="modal fade" id="sendTestEmailModal" tabindex="-1" aria-labelledby="sendTestEmailModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="sendTestEmailModalLabel">
+                        <i class="fas fa-paper-plane me-2"></i> Send Test Email
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Send a test email to verify how your template looks in an actual email client.
+                    </div>
+                    
+                    <form id="sendTestEmailForm">
+                        <input type="hidden" id="testEmailTemplateId">
+                        <div class="mb-3">
+                            <label for="testEmailRecipient" class="form-label">Recipient Email Address</label>
+                            <input type="email" class="form-control" id="testEmailRecipient" placeholder="your@email.com" required>
+                            <div class="form-text">The test email will be sent to this address.</div>
+                        </div>
+                    </form>
+                    
+                    <div id="testEmailLoading" class="text-center py-3" style="display: none;">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Sending email...</span>
+                        </div>
+                        <p class="mt-2">Sending test email...</p>
+                    </div>
+                    
+                    <div id="testEmailSuccess" class="alert alert-success" style="display: none;">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="testEmailSuccessMessage">Email sent successfully!</span>
+                        <div class="mt-2">
+                            <a href="#" id="testEmailPreviewLink" class="alert-link" target="_blank">
+                                <i class="fas fa-external-link-alt me-1"></i> View Email Preview
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div id="testEmailError" class="alert alert-danger" style="display: none;">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span id="testEmailErrorMessage"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="sendTestEmailSubmitBtn">
+                        <i class="fas fa-paper-plane me-2"></i> Send Test
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Content Analysis Modal -->
     <div class="modal fade" id="aiContentAnalysisModal" tabindex="-1" aria-labelledby="aiContentAnalysisModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -364,6 +424,7 @@
     <script src="../js/utils.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
+    <script src="../js/tutorial.js"></script>
     <script src="../js/templates.js"></script>
 </body>
 </html>
