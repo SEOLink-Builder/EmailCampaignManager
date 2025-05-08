@@ -9,6 +9,8 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const nodemailer = require('nodemailer');
 const { check, validationResult } = require('express-validator');
+const os = require('os');
+const mongoose = require('mongoose');
 
 // @route   GET api/admin/stats
 // @desc    Get admin dashboard statistics
@@ -237,24 +239,123 @@ router.delete('/users/:id', auth, admin, async (req, res) => {
   }
 });
 
+// @route   GET api/admin/system-stats
+// @desc    Get system statistics
+// @access  Admin only
+router.get('/system-stats', auth, admin, async (req, res) => {
+  try {
+    // Get system uptime
+    const uptimeSeconds = os.uptime();
+    const days = Math.floor(uptimeSeconds / 86400);
+    const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+    
+    // Get memory usage
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const memPercentage = Math.round((usedMem / totalMem) * 100);
+    
+    // Get CPU info
+    const cpuCores = os.cpus().length;
+    const loadAvg = os.loadavg()[0]; // 1 minute load average
+    const cpuPercentage = Math.min(Math.round((loadAvg / cpuCores) * 100), 100);
+    
+    // Get active connections - this is a simplified example
+    const activeUsers = await User.countDocuments({ lastActive: { $gte: new Date(Date.now() - 1000 * 60 * 15) } });
+    
+    // Send system stats
+    res.json({
+      success: true,
+      data: {
+        uptime: {
+          days,
+          hours,
+          minutes
+        },
+        memory: {
+          total: totalMem,
+          used: usedMem,
+          free: freeMem,
+          percentage: memPercentage
+        },
+        cpu: {
+          cores: cpuCores,
+          load: cpuPercentage
+        },
+        connections: {
+          total: activeUsers + 5, // Adding some buffer for non-user connections
+          active: activeUsers
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Get system stats error:', err.message);
+    res.status(500).json({ message: 'Server error', success: false });
+  }
+});
+
+// @route   GET api/admin/db-stats
+// @desc    Get database statistics
+// @access  Admin only
+router.get('/db-stats', auth, admin, async (req, res) => {
+  try {
+    // Get collection stats
+    const collections = [
+      { name: 'Users', count: await User.countDocuments(), status: 'healthy' },
+      { name: 'Campaigns', count: await Campaign.countDocuments(), status: 'healthy' },
+      { name: 'Templates', count: await Template.countDocuments(), status: 'healthy' },
+      { name: 'Lists', count: await List.countDocuments(), status: 'healthy' },
+      { name: 'PlanRequests', count: await PlanRequest.countDocuments(), status: 'healthy' }
+    ];
+    
+    // Add some size estimates - these would be more accurate in a real system
+    collections.forEach(collection => {
+      // Rough estimate based on document count
+      const avgDocSize = collection.name === 'Templates' ? 8192 : 2048; // Templates are larger
+      collection.size = collection.count * avgDocSize;
+    });
+    
+    res.json({
+      success: true,
+      data: collections
+    });
+  } catch (err) {
+    console.error('Get database stats error:', err.message);
+    res.status(500).json({ message: 'Server error', success: false });
+  }
+});
+
 // @route   GET api/admin/logs
 // @desc    Get system logs
 // @access  Admin only
 router.get('/logs', auth, admin, async (req, res) => {
   try {
-    // This is a placeholder - in a production system, you would
-    // have proper logging infrastructure and retrieve real logs
-    const mockLogs = [
-      { timestamp: new Date(), level: 'info', message: 'Server started successfully' },
-      { timestamp: new Date(Date.now() - 1000 * 60), level: 'info', message: 'Database connection established' },
-      { timestamp: new Date(Date.now() - 1000 * 60 * 5), level: 'warn', message: 'High memory usage detected' },
-      { timestamp: new Date(Date.now() - 1000 * 60 * 60), level: 'error', message: 'Failed to send email batch' }
-    ];
+    // Get query parameters
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
     
-    res.json(mockLogs);
+    // In a real system, these would come from a logs database or file
+    // This is a demonstration with generated logs
+    const systemLogs = generateSystemLogs(startDate, endDate);
+    
+    // Paginate logs
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedLogs = systemLogs.slice(startIndex, endIndex);
+    
+    res.json({
+      success: true,
+      logs: paginatedLogs,
+      totalLogs: systemLogs.length,
+      page,
+      pages: Math.ceil(systemLogs.length / limit)
+    });
   } catch (err) {
     console.error('Get logs error:', err.message);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', success: false });
   }
 });
 
@@ -542,5 +643,135 @@ router.get('/plan-requests', auth, admin, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+/**
+ * Generate system logs for demonstration purposes
+ * @param {Date} startDate - Start date for logs
+ * @param {Date} endDate - End date for logs
+ * @returns {Array} Array of log entries
+ */
+function generateSystemLogs(startDate, endDate) {
+  const logs = [];
+  const sources = [
+    'System', 'Authentication', 'Database', 'Email Service', 
+    'Campaign Manager', 'User Service', 'API Gateway', 'File System'
+  ];
+  
+  const infoMessages = [
+    'Server started successfully',
+    'Database connection established',
+    'Email campaign scheduled',
+    'User logged in',
+    'Admin action: user updated',
+    'Backup completed successfully',
+    'API rate limit configuration updated',
+    'New template created',
+    'Subscriber added to list',
+    'System configuration updated'
+  ];
+  
+  const warningMessages = [
+    'High CPU usage detected',
+    'Memory usage approaching threshold',
+    'Slow database query detected',
+    'Multiple failed login attempts',
+    'Email delivery rate decreasing',
+    'Low disk space warning',
+    'API rate limit warning',
+    'Outdated browser detected',
+    'SMTP connection timeout - retrying',
+    'Session store cleanup overdue'
+  ];
+  
+  const errorMessages = [
+    'Database connection failed',
+    'Email sending failed',
+    'API request timeout',
+    'Authentication error',
+    'File upload failed',
+    'Template rendering error',
+    'Subscriber import failed',
+    'Campaign scheduling conflict',
+    'Storage quota exceeded',
+    'SMTP configuration error'
+  ];
+  
+  const successMessages = [
+    'Email campaign sent successfully',
+    'Database backup created',
+    'User password changed',
+    'Account verified',
+    'Plan upgraded successfully',
+    'API key rotated',
+    'System update applied',
+    'New integration connected',
+    'Security scan completed',
+    'Reports generated successfully'
+  ];
+  
+  // Generate random logs within date range
+  const range = endDate.getTime() - startDate.getTime();
+  const numLogs = Math.min(Math.floor(range / 3600000) + 10, 200); // Reasonable number of logs
+  
+  for (let i = 0; i < numLogs; i++) {
+    const timestamp = new Date(startDate.getTime() + Math.random() * range);
+    const source = sources[Math.floor(Math.random() * sources.length)];
+    
+    // Determine log level with weighted randomness
+    const rand = Math.random();
+    let level, message;
+    
+    if (rand < 0.6) { // 60% info
+      level = 'info';
+      message = infoMessages[Math.floor(Math.random() * infoMessages.length)];
+    } else if (rand < 0.8) { // 20% warning
+      level = 'warning';
+      message = warningMessages[Math.floor(Math.random() * warningMessages.length)];
+    } else if (rand < 0.95) { // 15% error
+      level = 'error';
+      message = errorMessages[Math.floor(Math.random() * errorMessages.length)];
+    } else { // 5% success
+      level = 'success';
+      message = successMessages[Math.floor(Math.random() * successMessages.length)];
+    }
+    
+    // Add some contextual data for some logs
+    let data = null;
+    if (Math.random() < 0.3) { // 30% of logs have additional data
+      if (message.includes('User') || message.includes('Authentication')) {
+        data = {
+          userId: '6123456789abcdef01234567',
+          email: 'user@example.com',
+          ipAddress: '192.168.1.' + Math.floor(Math.random() * 255)
+        };
+      } else if (message.includes('Email') || message.includes('Campaign')) {
+        data = {
+          campaignId: '6123456789abcdef01234568',
+          recipients: Math.floor(Math.random() * 1000),
+          deliveryRate: (85 + Math.random() * 15).toFixed(2) + '%'
+        };
+      } else if (message.includes('Database')) {
+        data = {
+          queryTime: (Math.random() * 500).toFixed(2) + 'ms',
+          collection: ['users', 'campaigns', 'templates', 'subscribers'][Math.floor(Math.random() * 4)],
+          operations: Math.floor(Math.random() * 100)
+        };
+      }
+    }
+    
+    logs.push({
+      timestamp,
+      level,
+      source,
+      message,
+      data
+    });
+  }
+  
+  // Sort logs by timestamp (newest first)
+  logs.sort((a, b) => b.timestamp - a.timestamp);
+  
+  return logs;
+}
 
 module.exports = router;

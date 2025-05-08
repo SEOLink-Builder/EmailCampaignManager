@@ -21,7 +21,11 @@ app.set('trust proxy', 1);
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins for development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -34,11 +38,11 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "*"],
       fontSrc: ["'self'", "cdnjs.cloudflare.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", "*"],
     },
   },
   xssFilter: true,
@@ -124,9 +128,14 @@ app.use('/api/dashboard', require('./routes/analytics')); // Reuse analytics for
 app.use('/api/email', require('./routes/email')); // SMTP testing and email utilities
 app.use('/api/admin', require('./routes/admin')); // Admin dashboard and user management
 
-// Test route
+// Test routes
 app.get('/test', (req, res) => {
   res.sendFile(path.join(__dirname, '../test.html'));
+});
+
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
 // Root route - redirect to client

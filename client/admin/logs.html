@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Logs - Email Campaign Tool</title>
+  
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="../css/styles.css">
+  
+  <style>
+    /* Admin Sidebar */
+    #sidebar {
+      min-width: 250px;
+      max-width: 250px;
+      background: #343a40;
+      color: #fff;
+      transition: all 0.3s;
+      position: fixed;
+      height: 100vh;
+      z-index: 999;
+    }
+    
+    #sidebar.active {
+      margin-left: -250px;
+    }
+    
+    #sidebar .sidebar-header {
+      padding: 20px;
+      background: #212529;
+      text-align: center;
+    }
+    
+    #sidebar ul.components {
+      padding: 20px 0;
+    }
+    
+    #sidebar ul p {
+      color: #fff;
+      padding: 10px;
+    }
+    
+    #sidebar ul li a {
+      padding: 10px 20px;
+      font-size: 1.1em;
+      display: block;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    
+    #sidebar ul li a:hover,
+    #sidebar ul li.active > a {
+      color: #fff;
+      background: #1e88e5;
+    }
+    
+    #sidebar ul li a i {
+      margin-right: 10px;
+    }
+    
+    /* Content Area */
+    #content {
+      width: calc(100% - 250px);
+      min-height: 100vh;
+      transition: all 0.3s;
+      position: absolute;
+      right: 0;
+    }
+    
+    #content.active {
+      width: 100%;
+    }
+    
+    /* Navbar */
+    .admin-navbar {
+      background: #fff;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .admin-badge {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 0.25rem;
+      background-color: #e74a3b;
+      color: white;
+      margin-top: 5px;
+      display: inline-block;
+    }
+    
+    /* Log Entry Styling */
+    .log-entry {
+      border-left: 4px solid #e9ecef;
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 0.5rem;
+      transition: all 0.2s;
+    }
+    
+    .log-entry:hover {
+      background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    .log-entry-info {
+      border-left-color: #4e73df;
+    }
+    
+    .log-entry-warning {
+      border-left-color: #f6c23e;
+    }
+    
+    .log-entry-error {
+      border-left-color: #e74a3b;
+    }
+    
+    .log-entry-success {
+      border-left-color: #1cc88a;
+    }
+    
+    .log-timestamp {
+      color: #6c757d;
+      font-size: 0.85rem;
+    }
+    
+    .log-source {
+      font-weight: 600;
+    }
+    
+    .log-level {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-weight: 600;
+    }
+    
+    .log-level-info {
+      background-color: rgba(78, 115, 223, 0.1);
+      color: #4e73df;
+    }
+    
+    .log-level-warning {
+      background-color: rgba(246, 194, 62, 0.1);
+      color: #f6c23e;
+    }
+    
+    .log-level-error {
+      background-color: rgba(231, 74, 59, 0.1);
+      color: #e74a3b;
+    }
+    
+    .log-level-success {
+      background-color: rgba(28, 200, 138, 0.1);
+      color: #1cc88a;
+    }
+    
+    .log-message {
+      margin-top: 0.5rem;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    /* Animations */
+    .card-loaded {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Loading Spinners */
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+      flex-direction: column;
+    }
+    
+    .loading-spinner .spinner-text {
+      margin-top: 15px;
+      color: #6c757d;
+    }
+    
+    /* Log Code Blocks */
+    .log-code {
+      background-color: #f8f9fc;
+      border-radius: 0.25rem;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border: 1px solid #e3e6f0;
+      overflow-x: auto;
+    }
+    
+    /* Filter Pills */
+    .filter-pill {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-pill:hover {
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      transform: translateY(-1px);
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      #sidebar {
+        margin-left: -250px;
+      }
+      #sidebar.active {
+        margin-left: 0;
+      }
+      #content {
+        width: 100%;
+      }
+      #content.active {
+        width: calc(100% - 250px);
+      }
+      .navbar-text {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <h3>Email Campaign Tool</h3>
+        <span class="admin-badge">Admin</span>
+      </div>
+      
+      <ul class="list-unstyled components">
+        <li>
+          <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </li>
+        <li>
+          <a href="users.html"><i class="fas fa-users"></i> User Management</a>
+        </li>
+        <li>
+          <a href="plan-requests.html"><i class="fas fa-tasks"></i> Plan Requests</a>
+        </li>
+        <li>
+          <a href="statistics.html"><i class="fas fa-chart-line"></i> System Statistics</a>
+        </li>
+        <li class="active">
+          <a href="logs.html"><i class="fas fa-history"></i> System Logs</a>
+        </li>
+        <li>
+          <a href="../pages/dashboard.html"><i class="fas fa-user"></i> Switch to User View</a>
+        </li>
+        <li>
+          <a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+      </ul>
+    </nav>
+    
+    <!-- Page Content -->
+    <div id="content">
+      <!-- Navbar -->
+      <nav class="navbar admin-navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+          <button type="button" id="sidebarCollapse" class="btn btn-primary">
+            <i class="fas fa-bars"></i>
+          </button>
+          <span class="navbar-text ms-3">
+            <strong>System Logs</strong>
+          </span>
+          <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-shield me-1"></i> <span id="admin-name">Admin</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                <li><a class="dropdown-item" href="../pages/dashboard.html"><i class="fas fa-user me-2"></i>Switch to User View</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logout-link-dropdown"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+      
+      <!-- Main Content -->
+      <div class="container-fluid px-4 py-4">
+        <div class="row mb-4">
+          <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-history me-2"></i>System Logs</h1>
+            <p class="text-muted">Review system activities, errors, and events</p>
+          </div>
+        </div>
+        
+        <!-- Filter and Search -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="fw-bold mb-0">Log Level Filter</h6>
+                  <button id="reset-filters" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-undo me-1"></i> Reset
+                  </button>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <div class="badge bg-primary filter-pill px-3 py-2" data-filter="all">
+                    <i class="fas fa-filter me-1"></i> All
+                  </div>
+                  <div class="badge bg-info filter-pill px-3 py-2" data-filter="info">
+                    <i class="fas fa-info-circle me-1"></i> Info
+                  </div>
+                  <div class="badge bg-warning text-dark filter-pill px-3 py-2" data-filter="warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Warning
+                  </div>
+                  <div class="badge bg-danger filter-pill px-3 py-2" data-filter="error">
+                    <i class="fas fa-times-circle me-1"></i> Error
+                  </div>
+                  <div class="badge bg-success filter-pill px-3 py-2" data-filter="success">
+                    <i class="fas fa-check-circle me-1"></i> Success
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-3">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="log-search" placeholder="Search logs...">
+                  <button class="btn btn-primary" type="button" id="search-button">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+                <div class="form-text">Search by message content, source, or timestamp</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Date Range Filter -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="fw-bold mb-0">Date Range</h6>
+                  <div>
+                    <button id="refresh-logs" class="btn btn-sm btn-primary">
+                      <i class="fas fa-sync-alt me-1"></i> Refresh Logs
+                    </button>
+                  </div>
+                </div>
+                <div class="row g-2">
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <span class="input-group-text">From</span>
+                      <input type="date" class="form-control" id="date-from" value="">
+                    </div>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="input-group">
+                      <span class="input-group-text">To</span>
+                      <input type="date" class="form-control" id="date-to" value="">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <button id="apply-date-filter" class="btn btn-primary w-100">Apply</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Logs List -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h6 class="mb-0 fw-bold text-primary">System Activity Logs</h6>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i> Export
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="#" id="export-csv"><i class="fas fa-file-csv me-2"></i>Export as CSV</a></li>
+                    <li><a class="dropdown-item" href="#" id="export-json"><i class="fas fa-file-code me-2"></i>Export as JSON</a></li>
+                    <li><a class="dropdown-item" href="#" id="export-txt"><i class="fas fa-file-alt me-2"></i>Export as Text</a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="p-4" id="logs-container">
+                  <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-text">Loading system logs...</div>
+                  </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                  <div class="small text-muted" id="log-count-info">Showing 0 logs</div>
+                  <nav aria-label="Logs pagination">
+                    <ul class="pagination pagination-sm mb-0" id="logs-pagination">
+                      <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                      </li>
+                      <li class="page-item active" aria-current="page">
+                        <a class="page-link" href="#">1</a>
+                      </li>
+                      <li class="page-item disabled">
+                        <a class="page-link" href="#">Next</a>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Log Details Modal -->
+        <div class="modal fade" id="logDetailModal" tabindex="-1" aria-labelledby="logDetailModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="logDetailModalLabel">Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between">
+                    <span class="badge log-level log-level-info" id="detail-log-level">Info</span>
+                    <span class="log-timestamp" id="detail-timestamp">2023-07-21 15:30:45</span>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Source</label>
+                  <div class="log-source" id="detail-source">Authentication Service</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Message</label>
+                  <div class="log-message" id="detail-message">User login successful</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Additional Data</label>
+                  <div class="log-code" id="detail-data">
+                    {
+                      "userId": "60d5c3c8a8c9b42e3c8c1a34",
+                      "email": "user@example.com",
+                      "ipAddress": "192.168.1.1",
+                      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- API and Auth Scripts -->
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  
+  <!-- Admin Common Script -->
+  <script src="admin.js"></script>
+  
+  <!-- Logs Script -->
+  <script src="logs.js"></script>
+</body>
+</html>

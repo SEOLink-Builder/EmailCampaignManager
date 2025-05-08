@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Statistics - Email Campaign Tool</title>
+  
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="../css/styles.css">
+  
+  <style>
+    /* Admin Sidebar */
+    #sidebar {
+      min-width: 250px;
+      max-width: 250px;
+      background: #343a40;
+      color: #fff;
+      transition: all 0.3s;
+      position: fixed;
+      height: 100vh;
+      z-index: 999;
+    }
+    
+    #sidebar.active {
+      margin-left: -250px;
+    }
+    
+    #sidebar .sidebar-header {
+      padding: 20px;
+      background: #212529;
+      text-align: center;
+    }
+    
+    #sidebar ul.components {
+      padding: 20px 0;
+    }
+    
+    #sidebar ul p {
+      color: #fff;
+      padding: 10px;
+    }
+    
+    #sidebar ul li a {
+      padding: 10px 20px;
+      font-size: 1.1em;
+      display: block;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    
+    #sidebar ul li a:hover,
+    #sidebar ul li.active > a {
+      color: #fff;
+      background: #1e88e5;
+    }
+    
+    #sidebar ul li a i {
+      margin-right: 10px;
+    }
+    
+    /* Content Area */
+    #content {
+      width: calc(100% - 250px);
+      min-height: 100vh;
+      transition: all 0.3s;
+      position: absolute;
+      right: 0;
+    }
+    
+    #content.active {
+      width: 100%;
+    }
+    
+    /* Navbar */
+    .admin-navbar {
+      background: #fff;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .admin-badge {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 0.25rem;
+      background-color: #e74a3b;
+      color: white;
+      margin-top: 5px;
+      display: inline-block;
+    }
+    
+    /* Stats Cards */
+    .stat-card {
+      transition: all 0.3s;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+      border-radius: 0.5rem;
+      border-left: 0.25rem solid #4e73df;
+      overflow: hidden;
+    }
+    
+    .stat-card-primary { border-left-color: #4e73df; }
+    .stat-card-success { border-left-color: #1cc88a; }
+    .stat-card-info { border-left-color: #36b9cc; }
+    .stat-card-warning { border-left-color: #f6c23e; }
+    .stat-card-danger { border-left-color: #e74a3b; }
+    
+    .stat-card-icon {
+      font-size: 2rem;
+      opacity: 0.3;
+    }
+    
+    /* Chart Containers */
+    .chart-container {
+      height: 350px;
+      position: relative;
+    }
+    
+    /* Tables */
+    .table-cards {
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    /* Animations */
+    .card-loaded {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Loading Spinners */
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+      flex-direction: column;
+    }
+    
+    .loading-spinner .spinner-text {
+      margin-top: 15px;
+      color: #6c757d;
+    }
+    
+    /* Dashboard Content */
+    .dashboard-content {
+      display: none;
+    }
+    
+    /* System stats specific */
+    .system-stat-card {
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      border-left: 4px solid #4e73df;
+      overflow: hidden;
+    }
+
+    .system-stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stats-icon {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.5rem;
+    }
+
+    .bg-gradient-primary-light {
+      background: linear-gradient(45deg, #4e73df, #6f86d6);
+    }
+
+    .bg-gradient-success-light {
+      background: linear-gradient(45deg, #1cc88a, #36d39c);
+    }
+
+    .bg-gradient-info-light {
+      background: linear-gradient(45deg, #36b9cc, #4dd4e7);
+    }
+
+    .bg-gradient-warning-light {
+      background: linear-gradient(45deg, #f6c23e, #f8d066);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      #sidebar {
+        margin-left: -250px;
+      }
+      #sidebar.active {
+        margin-left: 0;
+      }
+      #content {
+        width: 100%;
+      }
+      #content.active {
+        width: calc(100% - 250px);
+      }
+      .navbar-text {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <h3>Email Campaign Tool</h3>
+        <span class="admin-badge">Admin</span>
+      </div>
+      
+      <ul class="list-unstyled components">
+        <li>
+          <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </li>
+        <li>
+          <a href="users.html"><i class="fas fa-users"></i> User Management</a>
+        </li>
+        <li>
+          <a href="plan-requests.html"><i class="fas fa-tasks"></i> Plan Requests</a>
+        </li>
+        <li class="active">
+          <a href="statistics.html"><i class="fas fa-chart-line"></i> System Statistics</a>
+        </li>
+        <li>
+          <a href="logs.html"><i class="fas fa-history"></i> System Logs</a>
+        </li>
+        <li>
+          <a href="../pages/dashboard.html"><i class="fas fa-user"></i> Switch to User View</a>
+        </li>
+        <li>
+          <a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+      </ul>
+    </nav>
+    
+    <!-- Page Content -->
+    <div id="content">
+      <!-- Navbar -->
+      <nav class="navbar admin-navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+          <button type="button" id="sidebarCollapse" class="btn btn-primary">
+            <i class="fas fa-bars"></i>
+          </button>
+          <span class="navbar-text ms-3">
+            <strong>System Statistics</strong>
+          </span>
+          <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-shield me-1"></i> <span id="admin-name">Admin</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                <li><a class="dropdown-item" href="../pages/dashboard.html"><i class="fas fa-user me-2"></i>Switch to User View</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logout-link-dropdown"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </nav>
+      
+      <!-- Main Content -->
+      <div class="container-fluid px-4 py-4">
+        <div class="row mb-4">
+          <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-chart-line me-2"></i>System Statistics</h1>
+            <p class="text-muted">View detailed system performance metrics and usage statistics</p>
+          </div>
+        </div>
+        
+        <!-- System Statistics Overview -->
+        <div class="row">
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 system-stat-card card-loaded">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted">Server Uptime</h6>
+                    <h4 id="server-uptime" class="mb-0 fw-bold">Loading...</h4>
+                  </div>
+                  <div class="stats-icon bg-gradient-primary-light text-white">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <span class="badge bg-success"><i class="fas fa-arrow-up me-1"></i>99.9% stability</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 system-stat-card card-loaded">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted">Memory Usage</h6>
+                    <h4 id="memory-usage" class="mb-0 fw-bold">Loading...</h4>
+                  </div>
+                  <div class="stats-icon bg-gradient-success-light text-white">
+                    <i class="fas fa-memory"></i>
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <div class="progress" style="height: 8px;">
+                    <div id="memory-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 system-stat-card card-loaded">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted">CPU Load</h6>
+                    <h4 id="cpu-load" class="mb-0 fw-bold">Loading...</h4>
+                  </div>
+                  <div class="stats-icon bg-gradient-info-light text-white">
+                    <i class="fas fa-microchip"></i>
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <div class="progress" style="height: 8px;">
+                    <div id="cpu-progress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 system-stat-card card-loaded">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted">Active Connections</h6>
+                    <h4 id="active-connections" class="mb-0 fw-bold">Loading...</h4>
+                  </div>
+                  <div class="stats-icon bg-gradient-warning-light text-white">
+                    <i class="fas fa-network-wired"></i>
+                  </div>
+                </div>
+                <div class="mt-2">
+                  <span class="badge bg-primary"><i class="fas fa-users me-1"></i><span id="active-users">0</span> users online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- System Performance Charts -->
+        <div class="row mb-4">
+          <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm card-loaded">
+              <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">System Performance History</h6>
+                <div class="btn-group" role="group">
+                  <button type="button" class="btn btn-outline-primary btn-sm time-range active" data-range="24h">24h</button>
+                  <button type="button" class="btn btn-outline-primary btn-sm time-range" data-range="7d">7d</button>
+                  <button type="button" class="btn btn-outline-primary btn-sm time-range" data-range="30d">30d</button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="systemPerformanceChart"></canvas>
+                  <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-text">Loading system performance data...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm card-loaded">
+              <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Resource Distribution</h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="resourceDistributionChart"></canvas>
+                  <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-text">Loading resource data...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Email Traffic and Database Stats -->
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm card-loaded">
+              <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Email Traffic Analysis</h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="emailTrafficChart"></canvas>
+                  <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-text">Loading email traffic data...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm card-loaded">
+              <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Database Statistics</h6>
+                <button class="btn btn-sm btn-primary" id="refreshDbStats">
+                  <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                  <thead class="bg-light">
+                    <tr>
+                      <th>Collection</th>
+                      <th>Documents</th>
+                      <th>Size</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-stats-table">
+                    <tr>
+                      <td colspan="4" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading database statistics...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- API and Auth Scripts -->
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  
+  <!-- Admin Common Script -->
+  <script src="admin.js"></script>
+  
+  <!-- Statistics Script -->
+  <script src="statistics.js"></script>
+</body>
+</html>
