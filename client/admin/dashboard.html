@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Email Campaign Tool</title>
+  
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="../css/styles.css">
+  
+  <style>
+    .admin-badge {
+      background-color: #e74a3b;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+    }
+    
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    
+    .status-pending {
+      background-color: #f6c23e;
+      color: white;
+    }
+    
+    .status-approved {
+      background-color: #1cc88a;
+      color: white;
+    }
+    
+    .status-rejected {
+      background-color: #e74a3b;
+      color: white;
+    }
+    
+    .plan-badge {
+      background-color: #4e73df;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+    }
+    
+    .plan-pro {
+      background-color: #1cc88a;
+    }
+    
+    .plan-enterprise {
+      background-color: #4e73df;
+    }
+    
+    .plan-free {
+      background-color: #858796;
+    }
+    
+    .plan-starter {
+      background-color: #f6c23e;
+      color: #5a5c69;
+    }
+    
+    .nav-tabs .nav-link {
+      color: #6e707e;
+    }
+    
+    .nav-tabs .nav-link.active {
+      color: #4e73df;
+      font-weight: 500;
+    }
+    
+    .card-counter {
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+      margin: 1rem 0;
+      padding: 1.5rem;
+      border-radius: 0.35rem;
+      position: relative;
+      color: white;
+      overflow: hidden;
+      height: 100px;
+    }
+    
+    .card-counter .count-icon {
+      position: absolute;
+      right: 0.75rem;
+      top: 0.75rem;
+      font-size: 1.75rem;
+      opacity: 0.4;
+    }
+    
+    .card-counter .count-numbers {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    
+    .card-counter .count-name {
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      opacity: 0.8;
+    }
+    
+    .card-counter.primary {
+      background: linear-gradient(45deg, #4e73df, #3a66d6);
+    }
+    
+    .card-counter.success {
+      background: linear-gradient(45deg, #1cc88a, #18a673);
+    }
+    
+    .card-counter.warning {
+      background: linear-gradient(45deg, #f6c23e, #f5b410);
+      color: #5a5c69;
+    }
+    
+    .card-counter.danger {
+      background: linear-gradient(45deg, #e74a3b, #e52618);
+    }
+    
+    #user-table tbody tr {
+      cursor: pointer;
+    }
+    
+    .user-detail {
+      display: none;
+    }
+    
+    .message-box {
+      background-color: #f8f9fc;
+      border-left: 4px solid #4e73df;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 0.25rem;
+    }
+    
+    .admin-message-box {
+      background-color: #f8f9fc;
+      border-left: 4px solid #e74a3b;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <h3>Email Campaign Tool</h3>
+        <span class="admin-badge">Admin</span>
+      </div>
+      <ul class="list-unstyled components">
+        <li class="active">
+          <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </li>
+        <li>
+          <a href="users.html"><i class="fas fa-users"></i> User Management</a>
+        </li>
+        <li>
+          <a href="plan-requests.html"><i class="fas fa-tasks"></i> Plan Requests</a>
+        </li>
+        <li>
+          <a href="statistics.html"><i class="fas fa-chart-line"></i> System Statistics</a>
+        </li>
+        <li>
+          <a href="logs.html"><i class="fas fa-history"></i> System Logs</a>
+        </li>
+        <li>
+          <a href="../pages/dashboard.html"><i class="fas fa-user"></i> Switch to User View</a>
+        </li>
+        <li>
+          <a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <button type="button" id="sidebarCollapse" class="btn btn-primary">
+            <i class="fas fa-bars"></i>
+          </button>
+          <span class="navbar-text ml-auto">
+            <span id="admin-name">Admin User</span>
+          </span>
+        </div>
+      </nav>
+
+      <div class="container-fluid">
+        <h2 class="mb-4">Admin Dashboard</h2>
+        
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card-counter primary">
+              <i class="fa fa-users count-icon"></i>
+              <span class="count-numbers" id="user-count">--</span>
+              <span class="count-name">Total Users</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card-counter success">
+              <i class="fa fa-paper-plane count-icon"></i>
+              <span class="count-numbers" id="campaigns-count">--</span>
+              <span class="count-name">Total Campaigns</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card-counter warning">
+              <i class="fa fa-list count-icon"></i>
+              <span class="count-numbers" id="lists-count">--</span>
+              <span class="count-name">Email Lists</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card-counter danger">
+              <i class="fa fa-file-alt count-icon"></i>
+              <span class="count-numbers" id="templates-count">--</span>
+              <span class="count-name">Templates</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-8">
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">User Registrations</h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                  <canvas id="registrationsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Plan Distribution</h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                  <canvas id="planDistributionChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card shadow mb-4">
+              <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Pending Plan Requests</h6>
+                <a href="plan-requests.html" class="btn btn-sm btn-primary">View All</a>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover" id="plan-requests-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Current Plan</th>
+                        <th>Requested Plan</th>
+                        <th>Request Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Populated by JavaScript -->
+                    </tbody>
+                  </table>
+                  <div id="no-plan-requests" class="text-center p-3 d-none">
+                    <p class="text-muted">No pending plan requests found.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card shadow mb-4">
+              <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Recent User Registrations</h6>
+                <a href="users.html" class="btn btn-sm btn-primary">View All Users</a>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover" id="recent-users-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Plan</th>
+                        <th>Registered</th>
+                        <th>Last Login</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Plan Request Modal -->
+  <div class="modal fade" id="planRequestModal" tabindex="-1" aria-labelledby="planRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="planRequestModalLabel">Plan Request Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="plan-request-details">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <p><strong>User:</strong> <span id="modal-user-name">--</span></p>
+                <p><strong>Email:</strong> <span id="modal-user-email">--</span></p>
+                <p><strong>Current Plan:</strong> <span id="modal-current-plan">--</span></p>
+                <p><strong>Requested Plan:</strong> <span id="modal-requested-plan">--</span></p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Request Date:</strong> <span id="modal-request-date">--</span></p>
+                <p><strong>Status:</strong> <span id="modal-status">--</span></p>
+              </div>
+            </div>
+            
+            <div class="message-box">
+              <p class="mb-0"><strong>User Message:</strong></p>
+              <p id="modal-user-message" class="mb-0">--</p>
+            </div>
+            
+            <div class="mb-3" id="admin-response-section">
+              <label for="admin-message" class="form-label">Admin Response:</label>
+              <textarea class="form-control" id="admin-message" rows="3" placeholder="Optional message to send to the user"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-danger" id="reject-plan-btn">Reject Request</button>
+          <button type="button" class="btn btn-success" id="approve-plan-btn">Approve Request</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS, Popper.js, and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom scripts -->
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../admin/admin.js"></script>
+</body>
+</html>

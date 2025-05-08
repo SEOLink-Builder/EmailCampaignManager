@@ -98,6 +98,11 @@
                             <i class="fas fa-cogs me-2"></i> Advanced
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="subscription-tab" data-bs-toggle="tab" data-bs-target="#subscription-tab-pane" type="button" role="tab" aria-controls="subscription-tab-pane" aria-selected="false">
+                            <i class="fas fa-crown me-2"></i> Subscription
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="settingsTabContent">
@@ -576,6 +581,82 @@
                                                 </button>
                                             </div>
                                         </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Tab -->
+                    <div class="tab-pane fade" id="subscription-tab-pane" role="tabpanel" aria-labelledby="subscription-tab" tabindex="0">
+                        <div class="row">
+                            <!-- Current Plan Details -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Current Plan</h5>
+                                        <span class="badge bg-primary" id="current-plan-badge">Free Plan</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0">Plan Features</h6>
+                                                <span class="text-muted" id="days-remaining"></span>
+                                            </div>
+                                            <div class="list-group">
+                                                <div class="list-group-item d-flex justify-content-between align-items-center" id="feature-sending-limit">
+                                                    <span><i class="fas fa-envelope me-2"></i> Monthly sending limit</span>
+                                                    <span class="badge bg-secondary rounded-pill">5,000</span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center" id="feature-list-limit">
+                                                    <span><i class="fas fa-list me-2"></i> Lists per account</span>
+                                                    <span class="badge bg-secondary rounded-pill">5</span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center" id="feature-company-email">
+                                                    <span><i class="fas fa-building me-2"></i> Company email sending</span>
+                                                    <span id="company-email-status"><i class="fas fa-times-circle text-danger"></i></span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center" id="feature-ai-testing">
+                                                    <span><i class="fas fa-robot me-2"></i> AI features</span>
+                                                    <span id="ai-feature-status"><i class="fas fa-times-circle text-danger"></i></span>
+                                                </div>
+                                                <div class="list-group-item d-flex justify-content-between align-items-center" id="feature-support">
+                                                    <span><i class="fas fa-headset me-2"></i> Support level</span>
+                                                    <span class="badge bg-secondary rounded-pill">Community</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="d-grid">
+                                            <a href="../pages/pricing.html" class="btn btn-primary">
+                                                <i class="fas fa-crown me-2"></i> View Plans & Upgrade
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Plan Requests -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Plan Upgrade Requests</h5>
+                                        <span class="badge bg-primary" id="plan-requests-count">0</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="plan-requests-container">
+                                            <div class="text-center py-4" id="no-plan-requests">
+                                                <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">You haven't submitted any plan upgrade requests yet.</p>
+                                                <a href="../pages/pricing.html" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-arrow-up me-2"></i> Request an Upgrade
+                                                </a>
+                                            </div>
+                                            
+                                            <div id="plan-requests-list" class="d-none">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -219,34 +219,73 @@ function showPlanSelectionModal(planName) {
     const planNameLower = planName.replace(/\s+/g, '-').toLowerCase();
     const planId = planNameLower.replace('-plan', ''); // Convert "Free Plan" to "free"
     
+    // Only allow upgrade requests for paid plans (not free)
+    const isFree = planId === 'free';
+    
     modal.innerHTML = `
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
                         <i class="fas fa-check-circle me-2"></i>
-                        Select ${planName}
+                        ${isFree ? 'Select' : 'Request'} ${planName}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>You've selected the <strong>${planName}</strong>. During this beta period, all plans are available at no cost for testing purposes.</p>
-                    <p class="mb-0">In the future, you'll be able to:</p>
-                    <ul>
-                        <li>Enter payment details</li>
-                        <li>Select billing cycle (monthly/annually)</li>
-                        <li>Apply promotional codes</li>
-                    </ul>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Since this is a beta version, no actual charges will be applied.
+                    ${isFree ? `
+                        <p>You've selected the <strong>${planName}</strong>. This plan is available immediately at no cost.</p>
+                    ` : `
+                        <p>You've selected the <strong>${planName}</strong>. Plan upgrades require approval from our team.</p>
+                        
+                        <div class="form-group mb-3">
+                            <label for="requestMessage" class="form-label">Request Message (Required)</label>
+                            <textarea class="form-control" id="requestMessage" rows="3" 
+                                placeholder="Please let us know why you'd like to upgrade to this plan..."></textarea>
+                            <div class="form-text">
+                                Briefly explain why you're requesting this plan upgrade.
+                            </div>
+                        </div>
+                    `}
+                    
+                    <div class="mt-3">
+                        <p class="mb-0">Plan benefits include:</p>
+                        <ul>
+                            ${planId === 'starter' ? `
+                                <li>Send up to 10,000 emails per month</li>
+                                <li>Use your company email with SMTP</li>
+                                <li>Limited AI testing features</li>
+                                <li>Email support</li>
+                            ` : planId === 'pro' ? `
+                                <li>Send up to 25,000 emails per month</li>
+                                <li>Full AI optimization features</li>
+                                <li>Custom branding</li>
+                                <li>Priority support</li>
+                            ` : planId === 'enterprise' ? `
+                                <li>Send up to 50,000 emails per month</li>
+                                <li>Advanced AI features</li>
+                                <li>24/7 support</li>
+                                <li>Custom integration options</li>
+                            ` : `
+                                <li>Send up to 5,000 emails per month</li>
+                                <li>Basic features</li>
+                                <li>Community support</li>
+                            `}
+                        </ul>
                     </div>
+                    
+                    ${!isFree ? `
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            During this beta period, approved plans are available at no cost for testing purposes.
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="confirmPlanButton">
-                        <i class="fas fa-check me-2"></i>
-                        Select ${planName}
+                        <i class="fas fa-${isFree ? 'check' : 'paper-plane'} me-2"></i>
+                        ${isFree ? 'Select Free Plan' : 'Submit Request'}
                     </button>
                 </div>
             </div>
@@ -262,6 +301,16 @@ function showPlanSelectionModal(planName) {
     // Handle selection confirmation
     const confirmButton = document.getElementById('confirmPlanButton');
     confirmButton.addEventListener('click', async () => {
+        // For free plan, proceed directly; for paid plans, submit request
+        if (planId === 'free') {
+            await selectFreePlan();
+        } else {
+            await requestPlanUpgrade();
+        }
+    });
+    
+    // Function to select free plan immediately (no approval needed)
+    async function selectFreePlan() {
         // Show loading state
         confirmButton.disabled = true;
         confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
@@ -272,7 +321,7 @@ function showPlanSelectionModal(planName) {
             
             // Success!
             modalInstance.hide();
-            showToast('success', `Successfully upgraded to ${planName}!`);
+            showToast('success', `Successfully switched to ${planName}!`);
             
             // Update UI to reflect the new plan
             setTimeout(() => {
@@ -282,10 +331,113 @@ function showPlanSelectionModal(planName) {
         } catch (error) {
             console.error('Error updating plan:', error);
             confirmButton.disabled = false;
-            confirmButton.innerHTML = `<i class="fas fa-check me-2"></i> Select ${planName}`;
+            confirmButton.innerHTML = `<i class="fas fa-check me-2"></i> Select Free Plan`;
             showToast('error', 'Failed to update plan. Please try again.');
         }
+    }
+    
+    // Function to request plan upgrade (requires approval)
+    async function requestPlanUpgrade() {
+        // Get request message
+        const requestMessage = document.getElementById('requestMessage').value.trim();
+        
+        // Validate message
+        if (!requestMessage) {
+            document.getElementById('requestMessage').classList.add('is-invalid');
+            showToast('error', 'Please provide a request message.');
+            return;
+        }
+        
+        // Show loading state
+        confirmButton.disabled = true;
+        confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Submitting Request...';
+        
+        try {
+            // Submit plan upgrade request via API
+            await apiPost('/api/user/request-plan-upgrade', {
+                requestedPlan: planId,
+                message: requestMessage
+            });
+            
+            // Success!
+            modalInstance.hide();
+            
+            // Show success modal
+            showPlanRequestSuccessModal(planName);
+            
+        } catch (error) {
+            console.error('Error requesting plan upgrade:', error);
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = `<i class="fas fa-paper-plane me-2"></i> Submit Request`;
+            
+            // Show specific error message if available
+            if (error.message) {
+                showToast('error', error.message);
+            } else {
+                showToast('error', 'Failed to submit plan upgrade request. Please try again.');
+            }
+        }
+    }
+    
+    // Clean up the modal when it's hidden
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
     });
+}
+
+/**
+ * Show success modal after submitting plan request
+ * @param {string} planName - The name of the requested plan
+ */
+function showPlanRequestSuccessModal(planName) {
+    // Create success modal
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'planRequestSuccessModal';
+    modal.setAttribute('tabindex', '-1');
+    
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Request Submitted
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-paper-plane fa-3x text-success mb-3"></i>
+                        <h4>Plan Upgrade Request Sent!</h4>
+                    </div>
+                    
+                    <p>Your request for the <strong>${planName}</strong> has been submitted successfully.</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>What happens next?</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Our team will review your request</li>
+                            <li>You'll receive an email notification when your request is approved or rejected</li>
+                            <li>If approved, your plan will be upgraded automatically</li>
+                        </ul>
+                    </div>
+                    
+                    <p>You can view the status of your request in the settings page.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Show the modal
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
     
     // Clean up the modal when it's hidden
     modal.addEventListener('hidden.bs.modal', () => {

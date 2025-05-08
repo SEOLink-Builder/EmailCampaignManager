@@ -98,6 +98,7 @@ app.use('/api/campaign', require('./routes/campaign'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/dashboard', require('./routes/analytics')); // Reuse analytics for dashboard data
 app.use('/api/email', require('./routes/email')); // SMTP testing and email utilities
+app.use('/api/admin', require('./routes/admin')); // Admin dashboard and user management
 
 // Test route
 app.get('/test', (req, res) => {

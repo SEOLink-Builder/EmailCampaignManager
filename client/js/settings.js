@@ -38,9 +38,12 @@ function handleTabNavigation() {
         else if (tabId === '#security') {
             tabId = '#security-tab';
         }
+        else if (tabId === '#subscription') {
+            tabId = '#subscription-tab';
+        }
         
         // Activate the tab corresponding to the hash
-        if (tabId === '#profile-tab' || tabId === '#email-tab' || tabId === '#security-tab' || tabId === '#advanced-tab') {
+        if (tabId === '#profile-tab' || tabId === '#email-tab' || tabId === '#security-tab' || tabId === '#advanced-tab' || tabId === '#subscription-tab') {
             // Find the tab element directly by ID
             const tabElement = document.getElementById(tabId.substring(1)); // Remove the # from the ID
             
@@ -292,6 +295,15 @@ function setupEventListeners() {
     const deleteAccountBtn = document.getElementById('deleteAccountBtn');
     if (deleteAccountBtn) {
         deleteAccountBtn.addEventListener('click', showDeleteAccountModal);
+    }
+    
+    // Handle tab change to load subscription data
+    const subscriptionTab = document.getElementById('subscription-tab');
+    if (subscriptionTab) {
+        subscriptionTab.addEventListener('shown.bs.tab', () => {
+            loadCurrentPlanInfo();
+            loadPlanRequests();
+        });
     }
     
     // Toggle password visibility
@@ -801,4 +813,218 @@ async function testSmtpConnection() {
             testBtn.disabled = false;
         }, 3000);
     }
+}
+
+/**
+ * Load current plan information
+ */
+async function loadCurrentPlanInfo() {
+    try {
+        const planInfo = await apiGet('/api/user/plan');
+        
+        if (!planInfo) {
+            showToast('error', 'Failed to load plan information');
+            return;
+        }
+        
+        // Update plan badge
+        const planBadge = document.getElementById('current-plan-badge');
+        if (planBadge) {
+            planBadge.textContent = planInfo.planName || 'Free Plan';
+            
+            // Update badge color based on plan
+            planBadge.className = 'badge';
+            if (planInfo.plan === 'starter') {
+                planBadge.classList.add('bg-warning', 'text-dark');
+            } else if (planInfo.plan === 'pro') {
+                planBadge.classList.add('bg-success');
+            } else if (planInfo.plan === 'enterprise') {
+                planBadge.classList.add('bg-primary');
+            } else {
+                planBadge.classList.add('bg-secondary');
+            }
+        }
+        
+        // Update sending limit
+        const sendingLimitBadge = document.querySelector('#feature-sending-limit .badge');
+        if (sendingLimitBadge && planInfo.planDetails) {
+            sendingLimitBadge.textContent = formatNumber(planInfo.planDetails.emailsPerMonth);
+        }
+        
+        // Update list limit (this is just an example, actual limits may vary)
+        const listLimitBadge = document.querySelector('#feature-list-limit .badge');
+        if (listLimitBadge) {
+            const listLimits = {
+                'free': 5,
+                'starter': 10,
+                'pro': 25,
+                'enterprise': 50
+            };
+            listLimitBadge.textContent = listLimits[planInfo.plan] || 5;
+        }
+        
+        // Update company email status
+        const companyEmailStatus = document.getElementById('company-email-status');
+        if (companyEmailStatus) {
+            if (planInfo.features && planInfo.features.companyEmailSending) {
+                companyEmailStatus.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+            } else {
+                companyEmailStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+            }
+        }
+        
+        // Update AI feature status
+        const aiFeatureStatus = document.getElementById('ai-feature-status');
+        if (aiFeatureStatus) {
+            if (planInfo.features && planInfo.features.aiTesting) {
+                aiFeatureStatus.innerHTML = planInfo.features.aiTesting === 'full' 
+                    ? '<span class="badge bg-success rounded-pill">Full</span>'
+                    : planInfo.features.aiTesting === 'limited'
+                        ? '<span class="badge bg-warning text-dark rounded-pill">Limited</span>'
+                        : planInfo.features.aiTesting === 'advanced'
+                            ? '<span class="badge bg-primary rounded-pill">Advanced</span>'
+                            : '<i class="fas fa-times-circle text-danger"></i>';
+            } else {
+                aiFeatureStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+            }
+        }
+        
+        // Update support level
+        const supportBadge = document.querySelector('#feature-support .badge');
+        if (supportBadge && planInfo.features) {
+            supportBadge.textContent = planInfo.features.support || 'Community';
+            
+            // Update badge color based on support level
+            supportBadge.className = 'badge rounded-pill';
+            if (planInfo.features.support === 'email') {
+                supportBadge.classList.add('bg-info');
+            } else if (planInfo.features.support === 'priority') {
+                supportBadge.classList.add('bg-success');
+            } else if (planInfo.features.support === '24/7') {
+                supportBadge.classList.add('bg-primary');
+            } else {
+                supportBadge.classList.add('bg-secondary');
+            }
+        }
+        
+        // Update days remaining
+        const daysRemainingElement = document.getElementById('days-remaining');
+        if (daysRemainingElement) {
+            if (planInfo.daysRemaining && planInfo.plan !== 'free') {
+                daysRemainingElement.textContent = `${planInfo.daysRemaining} days remaining`;
+            } else {
+                daysRemainingElement.textContent = '';
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error loading plan information:', error);
+        showToast('error', 'Failed to load plan information');
+    }
+}
+
+/**
+ * Load user's plan requests
+ */
+async function loadPlanRequests() {
+    try {
+        const planRequests = await apiGet('/api/user/plan-requests');
+        
+        const planRequestsContainer = document.getElementById('plan-requests-container');
+        const noPlanRequests = document.getElementById('no-plan-requests');
+        const planRequestsList = document.getElementById('plan-requests-list');
+        const requestsCountBadge = document.getElementById('plan-requests-count');
+        
+        if (!planRequestsContainer || !noPlanRequests || !planRequestsList) {
+            return;
+        }
+        
+        // Update count badge
+        if (requestsCountBadge) {
+            requestsCountBadge.textContent = planRequests.length;
+        }
+        
+        if (planRequests.length === 0) {
+            noPlanRequests.classList.remove('d-none');
+            planRequestsList.classList.add('d-none');
+            return;
+        }
+        
+        // Show plan requests
+        noPlanRequests.classList.add('d-none');
+        planRequestsList.classList.remove('d-none');
+        
+        // Clear previous requests
+        planRequestsList.innerHTML = '';
+        
+        // Add request cards
+        planRequests.forEach(request => {
+            const requestCard = document.createElement('div');
+            requestCard.className = 'card mb-3';
+            
+            const statusBadge = getStatusBadge(request.status);
+            
+            // Format dates
+            const requestDate = new Date(request.createdAt);
+            const dateString = formatDate(requestDate);
+            
+            // Format plan names
+            const planNames = {
+                'free': 'Free Plan',
+                'starter': 'Starter Plan',
+                'pro': 'Pro Plan',
+                'enterprise': 'Enterprise Plan'
+            };
+            
+            requestCard.innerHTML = `
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <span class="badge bg-secondary">${planNames[request.currentPlan] || request.currentPlan}</span>
+                        <i class="fas fa-arrow-right mx-2"></i>
+                        <span class="badge bg-primary">${planNames[request.requestedPlan] || request.requestedPlan}</span>
+                    </h6>
+                    ${statusBadge}
+                </div>
+                <div class="card-body">
+                    <p class="card-text small text-muted mb-2">Requested on ${dateString}</p>
+                    <p class="card-text">${request.message || 'No message provided'}</p>
+                    ${request.status !== 'pending' && request.adminMessage ? `
+                        <div class="alert alert-${request.status === 'approved' ? 'success' : 'secondary'} mt-3 mb-0 py-2 px-3">
+                            <strong>Admin Response:</strong> ${request.adminMessage}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            planRequestsList.appendChild(requestCard);
+        });
+        
+    } catch (error) {
+        console.error('Error loading plan requests:', error);
+        showToast('error', 'Failed to load plan requests');
+    }
+}
+
+/**
+ * Get status badge HTML for a plan request
+ * @param {string} status - Request status
+ * @returns {string} - Badge HTML
+ */
+function getStatusBadge(status) {
+    if (status === 'pending') {
+        return '<span class="badge bg-warning text-dark">Pending</span>';
+    } else if (status === 'approved') {
+        return '<span class="badge bg-success">Approved</span>';
+    } else {
+        return '<span class="badge bg-secondary">Rejected</span>';
+    }
+}
+
+/**
+ * Format number with commas
+ * @param {number} num - Number to format
+ * @returns {string} - Formatted number
+ */
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }

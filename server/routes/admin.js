@@ -1,0 +1,513 @@
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const Campaign = require('../models/Campaign');
+const List = require('../models/List');
+const Template = require('../models/Template');
+const PlanRequest = require('../models/PlanRequest');
+const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
+const nodemailer = require('nodemailer');
+const { check, validationResult } = require('express-validator');
+
+// @route   GET api/admin/stats
+// @desc    Get admin dashboard statistics
+// @access  Admin only
+router.get('/stats', auth, admin, async (req, res) => {
+  try {
+    // Get counts for dashboard stats
+    const userCount = await User.countDocuments({ role: 'user' });
+    const campaignCount = await Campaign.countDocuments();
+    const listCount = await List.countDocuments();
+    const templateCount = await Template.countDocuments();
+    
+    // Get user registration stats for chart
+    const userStats = await User.aggregate([
+      { 
+        $match: { role: 'user' } 
+      },
+      {
+        $group: {
+          _id: { 
+            $dateToString: { 
+              format: "%Y-%m-%d", 
+              date: "$createdAt" 
+            } 
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { 
+        $sort: { _id: 1 } 
+      },
+      { 
+        $limit: 30 
+      }
+    ]);
+    
+    // Get plans distribution
+    const planStats = await User.aggregate([
+      {
+        $group: {
+          _id: "$plan",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Get recent user registrations
+    const recentUsers = await User.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('email name plan createdAt lastLogin');
+    
+    res.json({
+      stats: {
+        userCount,
+        campaignCount,
+        listCount,
+        templateCount
+      },
+      userStats: userStats.map(stat => ({
+        date: stat._id,
+        count: stat.count
+      })),
+      planStats: planStats.map(stat => ({
+        plan: stat._id,
+        count: stat.count
+      })),
+      recentUsers
+    });
+  } catch (err) {
+    console.error('Admin stats error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET api/admin/users
+// @desc    Get all users
+// @access  Admin only
+router.get('/users', auth, admin, async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
+    
+    res.json(users);
+  } catch (err) {
+    console.error('Get users error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET api/admin/users/:id
+// @desc    Get user by ID
+// @access  Admin only
+router.get('/users/:id', auth, admin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (err) {
+    console.error('Get user error:', err.message);
+    
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT api/admin/users/:id
+// @desc    Update user details
+// @access  Admin only
+router.put('/users/:id', auth, admin, async (req, res) => {
+  try {
+    const { name, email, plan, role } = req.body;
+    
+    // Find user
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Prevent changing the current admin's role
+    if (req.params.id === req.user.id && role && role !== 'admin') {
+      return res.status(400).json({ message: 'Cannot change your own admin role' });
+    }
+    
+    // Update user fields if provided
+    if (name) user.name = name;
+    if (email) user.email = email;
+    
+    // Update plan and plan details if provided
+    if (plan) {
+      user.plan = plan;
+      
+      // Set plan limits based on the selected plan
+      const planLimits = {
+        free: {
+          emailsPerList: 100,
+          emailsPerHour: 200,
+          emailsPerDay: 500,
+          emailsPerMonth: 5000
+        },
+        starter: {
+          emailsPerList: 200,
+          emailsPerHour: 300,
+          emailsPerDay: 800,
+          emailsPerMonth: 10000
+        },
+        pro: {
+          emailsPerList: 300,
+          emailsPerHour: 500,
+          emailsPerDay: 1200,
+          emailsPerMonth: 25000
+        },
+        enterprise: {
+          emailsPerList: 500,
+          emailsPerHour: 800,
+          emailsPerDay: 2000,
+          emailsPerMonth: 50000
+        }
+      };
+      
+      // Reset subscription dates
+      const subscriptionEndDate = new Date();
+      subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
+      
+      user.planDetails = {
+        ...planLimits[plan],
+        subscriptionStartDate: new Date(),
+        subscriptionEndDate: plan === 'free' ? null : subscriptionEndDate
+      };
+    }
+    
+    // Update role if provided (except for self)
+    if (role && req.params.id !== req.user.id) {
+      user.role = role;
+    }
+    
+    await user.save();
+    
+    // Return the updated user (without password)
+    const updatedUser = await User.findById(req.params.id).select('-password');
+    res.json(updatedUser);
+  } catch (err) {
+    console.error('Update user error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE api/admin/users/:id
+// @desc    Delete user
+// @access  Admin only
+router.delete('/users/:id', auth, admin, async (req, res) => {
+  try {
+    // Prevent deleting self
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ message: 'Cannot delete your own admin account' });
+    }
+    
+    // Find user
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Delete all user data
+    await Campaign.deleteMany({ user: req.params.id });
+    await List.deleteMany({ user: req.params.id });
+    await Template.deleteMany({ user: req.params.id });
+    
+    // Delete the user
+    await User.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'User and all associated data deleted successfully' });
+  } catch (err) {
+    console.error('Delete user error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET api/admin/logs
+// @desc    Get system logs
+// @access  Admin only
+router.get('/logs', auth, admin, async (req, res) => {
+  try {
+    // This is a placeholder - in a production system, you would
+    // have proper logging infrastructure and retrieve real logs
+    const mockLogs = [
+      { timestamp: new Date(), level: 'info', message: 'Server started successfully' },
+      { timestamp: new Date(Date.now() - 1000 * 60), level: 'info', message: 'Database connection established' },
+      { timestamp: new Date(Date.now() - 1000 * 60 * 5), level: 'warn', message: 'High memory usage detected' },
+      { timestamp: new Date(Date.now() - 1000 * 60 * 60), level: 'error', message: 'Failed to send email batch' }
+    ];
+    
+    res.json(mockLogs);
+  } catch (err) {
+    console.error('Get logs error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST api/admin/impersonate/:id
+// @desc    Impersonate a user
+// @access  Admin only
+router.post('/impersonate/:id', auth, admin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Create a special impersonation token
+    const payload = {
+      user: {
+        id: user.id,
+        impersonatedBy: req.user.id
+      }
+    };
+    
+    const jwt = require('jsonwebtoken');
+    
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET || 'jwt-secret-token',
+      { expiresIn: '1h' }, // Limited time for security
+      (err, token) => {
+        if (err) throw err;
+        res.json({ 
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+          }
+        });
+      }
+    );
+  } catch (err) {
+    console.error('Impersonate user error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST api/admin/plan-requests/respond
+// @desc    Respond to a plan change request
+// @access  Admin only
+router.post('/plan-requests/respond', 
+  [
+    auth, 
+    admin,
+    check('requestId', 'Request ID is required').not().isEmpty(),
+    check('approved', 'Approval status is required').isBoolean()
+  ], 
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { requestId, approved, message } = req.body;
+
+    try {
+      // Find the plan request
+      const planRequest = await PlanRequest.findById(requestId).populate('user');
+      
+      if (!planRequest) {
+        return res.status(404).json({ message: 'Plan request not found' });
+      }
+      
+      // Update the plan request status
+      planRequest.status = approved ? 'approved' : 'rejected';
+      planRequest.adminMessage = message || '';
+      planRequest.adminResponse = {
+        respondedBy: req.user.id,
+        respondedAt: new Date()
+      };
+      
+      // If approved, update the user's plan
+      if (approved) {
+        const user = planRequest.user;
+        const plan = planRequest.requestedPlan;
+        
+        // Set plan
+        user.plan = plan;
+        
+        // Set plan limits based on the selected plan
+        const planLimits = {
+          free: {
+            emailsPerList: 100,
+            emailsPerHour: 200,
+            emailsPerDay: 500,
+            emailsPerMonth: 5000
+          },
+          starter: {
+            emailsPerList: 200,
+            emailsPerHour: 300,
+            emailsPerDay: 800,
+            emailsPerMonth: 10000
+          },
+          pro: {
+            emailsPerList: 300,
+            emailsPerHour: 500,
+            emailsPerDay: 1200,
+            emailsPerMonth: 25000
+          },
+          enterprise: {
+            emailsPerList: 500,
+            emailsPerHour: 800,
+            emailsPerDay: 2000,
+            emailsPerMonth: 50000
+          }
+        };
+        
+        // Calculate subscription end date (30 days from now)
+        const subscriptionEndDate = new Date();
+        subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
+        
+        user.planDetails = {
+          ...planLimits[plan],
+          subscriptionStartDate: new Date(),
+          subscriptionEndDate: plan === 'free' ? null : subscriptionEndDate
+        };
+        
+        await user.save();
+      }
+      
+      // Send email notification to user about plan request status
+      // This uses nodemailer directly, but in production you might use a dedicated email service
+      try {
+        // Get SMTP settings from admin user or use defaults
+        const adminUser = await User.findById(req.user.id);
+        let smtpConfig = {
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: {
+            user: 'noreply@example.com',
+            pass: 'password'
+          }
+        };
+        
+        // Use admin's SMTP settings if available
+        if (adminUser.settings && adminUser.settings.smtp && adminUser.settings.smtp.enabled) {
+          smtpConfig = {
+            host: adminUser.settings.smtp.host,
+            port: adminUser.settings.smtp.port,
+            secure: adminUser.settings.smtp.secure,
+            auth: {
+              user: adminUser.settings.smtp.auth.user,
+              pass: adminUser.settings.smtp.auth.pass
+            }
+          };
+        }
+        
+        const transporter = nodemailer.createTransport(smtpConfig);
+        
+        const planNames = {
+          free: 'Free Plan',
+          starter: 'Starter Plan',
+          pro: 'Pro Plan',
+          enterprise: 'Enterprise Plan'
+        };
+        
+        const requestedPlan = planRequest.requestedPlan;
+        
+        const emailSubject = approved 
+          ? `Your request for ${planNames[requestedPlan]} has been approved!` 
+          : `Update on your ${planNames[requestedPlan]} request`;
+        
+        const emailContent = approved
+          ? `<p>Good news! Your request to upgrade to the <strong>${planNames[requestedPlan]}</strong> has been approved.</p>
+             <p>You now have access to all the features and benefits of this plan. Your new plan is active immediately.</p>
+             <p>Thank you for choosing our service!</p>
+             ${message ? `<p><strong>Admin message:</strong> ${message}</p>` : ''}`
+          : `<p>We've reviewed your request to upgrade to the <strong>${planNames[requestedPlan]}</strong>.</p>
+             <p>Unfortunately, we were not able to approve your request at this time.</p>
+             ${message ? `<p><strong>Admin message:</strong> ${message}</p>` : ''}
+             <p>If you have any questions, please reply to this email for assistance.</p>`;
+        
+        await transporter.sendMail({
+          from: `"Email Campaign Tool" <${smtpConfig.auth.user}>`,
+          to: user.email,
+          subject: emailSubject,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background-color: #4e73df; padding: 20px; color: white; text-align: center;">
+                <h2 style="margin: 0;">Email Campaign Tool</h2>
+              </div>
+              <div style="padding: 20px; border: 1px solid #e9ecef; border-top: none;">
+                <p>Hello ${user.name || user.email},</p>
+                ${emailContent}
+                <p style="margin-top: 30px;">Best regards,<br>The Email Campaign Team</p>
+              </div>
+              <div style="background-color: #f8f9fc; padding: 15px; text-align: center; font-size: 12px; color: #858796;">
+                &copy; ${new Date().getFullYear()} Email Campaign Tool. All rights reserved.
+              </div>
+            </div>
+          `
+        });
+        
+      } catch (emailError) {
+        console.error('Error sending notification email:', emailError);
+        // Continue execution even if email fails
+      }
+      
+      // Save the plan request changes
+      await planRequest.save();
+      
+      res.json({ 
+        message: `Plan request ${approved ? 'approved' : 'rejected'} successfully`,
+        plan: approved ? planRequest.requestedPlan : planRequest.user.plan
+      });
+      
+    } catch (err) {
+      console.error('Plan request response error:', err.message);
+      res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @route   GET api/admin/plan-requests
+// @desc    Get all plan change requests
+// @access  Admin only
+router.get('/plan-requests', auth, admin, async (req, res) => {
+  try {
+    // Get all plan requests with user information
+    const planRequests = await PlanRequest.find()
+      .sort({ createdAt: -1 })
+      .populate('user', 'email name');
+    
+    // Format the response
+    const formattedRequests = planRequests.map(request => ({
+      id: request._id,
+      userId: request.user._id,
+      userEmail: request.user.email,
+      userName: request.user.name,
+      currentPlan: request.currentPlan,
+      requestedPlan: request.requestedPlan,
+      requestDate: request.createdAt,
+      status: request.status,
+      message: request.message,
+      adminMessage: request.adminMessage,
+      adminResponse: request.adminResponse
+    }));
+    
+    res.json(formattedRequests);
+  } catch (err) {
+    console.error('Get plan requests error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+module.exports = router;

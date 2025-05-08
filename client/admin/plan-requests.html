@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Requests - Admin Dashboard</title>
+  
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="../css/styles.css">
+  
+  <style>
+    .admin-badge {
+      background-color: #e74a3b;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+    }
+    
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    
+    .status-pending {
+      background-color: #f6c23e;
+      color: white;
+    }
+    
+    .status-approved {
+      background-color: #1cc88a;
+      color: white;
+    }
+    
+    .status-rejected {
+      background-color: #e74a3b;
+      color: white;
+    }
+    
+    .plan-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    
+    .plan-free {
+      background-color: #858796;
+      color: white;
+    }
+    
+    .plan-starter {
+      background-color: #f6c23e;
+      color: #5a5c69;
+    }
+    
+    .plan-pro {
+      background-color: #1cc88a;
+      color: white;
+    }
+    
+    .plan-enterprise {
+      background-color: #4e73df;
+      color: white;
+    }
+    
+    .user-link {
+      color: #4e73df;
+      text-decoration: none;
+    }
+    
+    .user-link:hover {
+      text-decoration: underline;
+    }
+    
+    .request-card {
+      transition: all 0.2s ease;
+    }
+    
+    .request-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .message-box {
+      background-color: #f8f9fc;
+      border-left: 4px solid #4e73df;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 0.25rem;
+    }
+    
+    .admin-message-box {
+      background-color: #f8f9fc;
+      border-left: 4px solid #e74a3b;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 0.25rem;
+    }
+    
+    .card-hover {
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <h3>Email Campaign Tool</h3>
+        <span class="admin-badge">Admin</span>
+      </div>
+      <ul class="list-unstyled components">
+        <li>
+          <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </li>
+        <li>
+          <a href="users.html"><i class="fas fa-users"></i> User Management</a>
+        </li>
+        <li class="active">
+          <a href="plan-requests.html"><i class="fas fa-tasks"></i> Plan Requests</a>
+        </li>
+        <li>
+          <a href="statistics.html"><i class="fas fa-chart-line"></i> System Statistics</a>
+        </li>
+        <li>
+          <a href="logs.html"><i class="fas fa-history"></i> System Logs</a>
+        </li>
+        <li>
+          <a href="../pages/dashboard.html"><i class="fas fa-user"></i> Switch to User View</a>
+        </li>
+        <li>
+          <a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <button type="button" id="sidebarCollapse" class="btn btn-primary">
+            <i class="fas fa-bars"></i>
+          </button>
+          <span class="navbar-text ml-auto">
+            <span id="admin-name">Admin User</span>
+          </span>
+        </div>
+      </nav>
+
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="mb-0">Plan Requests</h2>
+          <div>
+            <div class="btn-group" role="group">
+              <button id="filter-all" class="btn btn-outline-primary active">All</button>
+              <button id="filter-pending" class="btn btn-outline-warning">Pending</button>
+              <button id="filter-approved" class="btn btn-outline-success">Approved</button>
+              <button id="filter-rejected" class="btn btn-outline-danger">Rejected</button>
+            </div>
+            <button id="refresh-btn" class="btn btn-primary ms-2">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+        </div>
+        
+        <div class="row">
+          <!-- Summary Cards -->
+          <div class="col-md-12">
+            <div class="row mb-4">
+              <div class="col-md-3">
+                <div class="card card-hover border-left-warning shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                          Pending Requests
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="pending-count">0</div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-3">
+                <div class="card card-hover border-left-success shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                          Approved Requests
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="approved-count">0</div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-3">
+                <div class="card card-hover border-left-danger shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                          Rejected Requests
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="rejected-count">0</div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-3">
+                <div class="card card-hover border-left-primary shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                          Total Requests
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-count">0</div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-list fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Plan Requests -->
+        <div class="row">
+          <div class="col-md-12">
+            <div id="plan-requests-container" class="mb-4">
+              <!-- Populated by JavaScript -->
+              <div id="loading-indicator" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Loading plan requests...</p>
+              </div>
+              
+              <div id="no-requests-message" class="text-center py-5 d-none">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h4>No plan requests found</h4>
+                <p class="text-muted">There are no plan upgrade requests to display.</p>
+              </div>
+              
+              <div id="plan-requests" class="row">
+                <!-- Request cards will be added here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Request Modal -->
+  <div class="modal fade" id="requestModal" tabindex="-1" aria-labelledby="requestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="requestModalLabel">Plan Request Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="request-details">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <p><strong>User:</strong> <span id="modal-user-name">--</span></p>
+                <p><strong>Email:</strong> <span id="modal-user-email">--</span></p>
+                <p><strong>Current Plan:</strong> <span id="modal-current-plan">--</span></p>
+                <p><strong>Requested Plan:</strong> <span id="modal-requested-plan">--</span></p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Request Date:</strong> <span id="modal-request-date">--</span></p>
+                <p><strong>Status:</strong> <span id="modal-status">--</span></p>
+                <div id="modal-response-date-container" class="d-none">
+                  <p><strong>Response Date:</strong> <span id="modal-response-date">--</span></p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="message-box">
+              <p class="mb-0"><strong>User Message:</strong></p>
+              <p id="modal-user-message" class="mb-0">--</p>
+            </div>
+            
+            <div id="modal-admin-message-container" class="admin-message-box mt-3 d-none">
+              <p class="mb-0"><strong>Admin Response:</strong></p>
+              <p id="modal-admin-message" class="mb-0">--</p>
+            </div>
+            
+            <form id="admin-response-form" class="mt-3">
+              <div class="mb-3" id="response-form-container">
+                <label for="admin-message" class="form-label">Admin Response:</label>
+                <textarea class="form-control" id="admin-message" rows="3" placeholder="Optional message to send to the user"></textarea>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer" id="modal-actions">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-danger" id="reject-plan-btn">
+            <i class="fas fa-times-circle me-2"></i> Reject Request
+          </button>
+          <button type="button" class="btn btn-success" id="approve-plan-btn">
+            <i class="fas fa-check-circle me-2"></i> Approve Request
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <!-- Custom scripts -->
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../admin/admin.js"></script>
+  <script src="../admin/plan-requests.js"></script>
+</body>
+</html>
