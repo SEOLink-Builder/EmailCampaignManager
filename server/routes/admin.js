@@ -336,8 +336,8 @@ router.post('/plan-requests/respond',
         respondedAt: new Date()
       };
       
-      // If approved, update the user's plan
-      if (approved) {
+      // If approved, update the user's plan, but only if user still exists
+      if (approved && planRequest.user) {
         const user = planRequest.user;
         const plan = planRequest.requestedPlan;
         
@@ -383,94 +383,108 @@ router.post('/plan-requests/respond',
         };
         
         await user.save();
+      } else if (approved && !planRequest.user) {
+        console.warn('Cannot update plan for deleted user');
       }
       
-      // Send email notification to user about plan request status
-      // This uses nodemailer directly, but in production you might use a dedicated email service
-      try {
-        // Get SMTP settings from admin user or use defaults
-        const adminUser = await User.findById(req.user.id);
-        let smtpConfig = {
-          host: 'smtp.gmail.com',
-          port: 587,
-          secure: false,
-          auth: {
-            user: 'noreply@example.com',
-            pass: 'password'
-          }
-        };
-        
-        // Use admin's SMTP settings if available
-        if (adminUser.settings && adminUser.settings.smtp && adminUser.settings.smtp.enabled) {
-          smtpConfig = {
-            host: adminUser.settings.smtp.host,
-            port: adminUser.settings.smtp.port,
-            secure: adminUser.settings.smtp.secure,
+      // Send email notification to user about plan request status, but only if user still exists
+      if (planRequest.user) {
+        try {
+          // Get SMTP settings from admin user or use defaults
+          const adminUser = await User.findById(req.user.id);
+          let smtpConfig = {
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
             auth: {
-              user: adminUser.settings.smtp.auth.user,
-              pass: adminUser.settings.smtp.auth.pass
+              user: 'noreply@example.com',
+              pass: 'password'
             }
           };
+          
+          // Use admin's SMTP settings if available
+          if (adminUser.settings && adminUser.settings.smtp && adminUser.settings.smtp.enabled) {
+            smtpConfig = {
+              host: adminUser.settings.smtp.host,
+              port: adminUser.settings.smtp.port,
+              secure: adminUser.settings.smtp.secure,
+              auth: {
+                user: adminUser.settings.smtp.auth.user,
+                pass: adminUser.settings.smtp.auth.pass
+              }
+            };
+          }
+          
+          const transporter = nodemailer.createTransport(smtpConfig);
+          
+          const planNames = {
+            free: 'Free Plan',
+            starter: 'Starter Plan',
+            pro: 'Pro Plan',
+            enterprise: 'Enterprise Plan'
+          };
+          
+          const requestedPlan = planRequest.requestedPlan;
+          const user = planRequest.user; // Store user in local variable for cleaner access
+          
+          const emailSubject = approved 
+            ? `Your request for ${planNames[requestedPlan]} has been approved!` 
+            : `Update on your ${planNames[requestedPlan]} request`;
+          
+          const emailContent = approved
+            ? `<p>Good news! Your request to upgrade to the <strong>${planNames[requestedPlan]}</strong> has been approved.</p>
+               <p>You now have access to all the features and benefits of this plan. Your new plan is active immediately.</p>
+               <p>Thank you for choosing our service!</p>
+               ${message ? `<p><strong>Admin message:</strong> ${message}</p>` : ''}`
+            : `<p>We've reviewed your request to upgrade to the <strong>${planNames[requestedPlan]}</strong>.</p>
+               <p>Unfortunately, we were not able to approve your request at this time.</p>
+               ${message ? `<p><strong>Admin message:</strong> ${message}</p>` : ''}
+               <p>If you have any questions, please reply to this email for assistance.</p>`;
+          
+          await transporter.sendMail({
+            from: `"Email Campaign Tool" <${smtpConfig.auth.user}>`,
+            to: user.email,
+            subject: emailSubject,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background-color: #4e73df; padding: 20px; color: white; text-align: center;">
+                  <h2 style="margin: 0;">Email Campaign Tool</h2>
+                </div>
+                <div style="padding: 20px; border: 1px solid #e9ecef; border-top: none;">
+                  <p>Hello ${user.name || user.email},</p>
+                  ${emailContent}
+                  <p style="margin-top: 30px;">Best regards,<br>The Email Campaign Team</p>
+                </div>
+                <div style="background-color: #f8f9fc; padding: 15px; text-align: center; font-size: 12px; color: #858796;">
+                  &copy; ${new Date().getFullYear()} Email Campaign Tool. All rights reserved.
+                </div>
+              </div>
+            `
+          });
+          
+        } catch (emailError) {
+          console.error('Error sending notification email:', emailError);
+          // Continue execution even if email fails
         }
-        
-        const transporter = nodemailer.createTransport(smtpConfig);
-        
-        const planNames = {
-          free: 'Free Plan',
-          starter: 'Starter Plan',
-          pro: 'Pro Plan',
-          enterprise: 'Enterprise Plan'
-        };
-        
-        const requestedPlan = planRequest.requestedPlan;
-        
-        const emailSubject = approved 
-          ? `Your request for ${planNames[requestedPlan]} has been approved!` 
-          : `Update on your ${planNames[requestedPlan]} request`;
-        
-        const emailContent = approved
-          ? `<p>Good news! Your request to upgrade to the <strong>${planNames[requestedPlan]}</strong> has been approved.</p>
-             <p>You now have access to all the features and benefits of this plan. Your new plan is active immediately.</p>
-             <p>Thank you for choosing our service!</p>
-             ${message ? `<p><strong>Admin message:</strong> ${message}</p>` : ''}`
-          : `<p>We've reviewed your request to upgrade to the <strong>${planNames[requestedPlan]}</strong>.</p>
-             <p>Unfortunately, we were not able to approve your request at this time.</p>
-             ${message ? `<p><strong>Admin message:</strong> ${message}</p>` : ''}
-             <p>If you have any questions, please reply to this email for assistance.</p>`;
-        
-        await transporter.sendMail({
-          from: `"Email Campaign Tool" <${smtpConfig.auth.user}>`,
-          to: user.email,
-          subject: emailSubject,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background-color: #4e73df; padding: 20px; color: white; text-align: center;">
-                <h2 style="margin: 0;">Email Campaign Tool</h2>
-              </div>
-              <div style="padding: 20px; border: 1px solid #e9ecef; border-top: none;">
-                <p>Hello ${user.name || user.email},</p>
-                ${emailContent}
-                <p style="margin-top: 30px;">Best regards,<br>The Email Campaign Team</p>
-              </div>
-              <div style="background-color: #f8f9fc; padding: 15px; text-align: center; font-size: 12px; color: #858796;">
-                &copy; ${new Date().getFullYear()} Email Campaign Tool. All rights reserved.
-              </div>
-            </div>
-          `
-        });
-        
-      } catch (emailError) {
-        console.error('Error sending notification email:', emailError);
-        // Continue execution even if email fails
+      } else {
+        console.warn('Cannot send notification email - user no longer exists');
       }
       
       // Save the plan request changes
       await planRequest.save();
       
-      res.json({ 
-        message: `Plan request ${approved ? 'approved' : 'rejected'} successfully`,
-        plan: approved ? planRequest.requestedPlan : planRequest.user.plan
-      });
+      let responseData = {
+        message: `Plan request ${approved ? 'approved' : 'rejected'} successfully`
+      };
+      
+      // Add plan info to response if available
+      if (approved) {
+        responseData.plan = planRequest.requestedPlan;
+      } else if (planRequest.user) {
+        responseData.plan = planRequest.user.plan;
+      }
+      
+      res.json(responseData);
       
     } catch (err) {
       console.error('Plan request response error:', err.message);
@@ -489,19 +503,38 @@ router.get('/plan-requests', auth, admin, async (req, res) => {
       .populate('user', 'email name');
     
     // Format the response
-    const formattedRequests = planRequests.map(request => ({
-      id: request._id,
-      userId: request.user._id,
-      userEmail: request.user.email,
-      userName: request.user.name,
-      currentPlan: request.currentPlan,
-      requestedPlan: request.requestedPlan,
-      requestDate: request.createdAt,
-      status: request.status,
-      message: request.message,
-      adminMessage: request.adminMessage,
-      adminResponse: request.adminResponse
-    }));
+    const formattedRequests = planRequests.map(request => {
+      // Handle null user (user might have been deleted)
+      if (!request.user) {
+        return {
+          id: request._id,
+          userId: null,
+          userEmail: 'User Deleted',
+          userName: 'User Deleted',
+          currentPlan: request.currentPlan,
+          requestedPlan: request.requestedPlan,
+          requestDate: request.createdAt,
+          status: request.status,
+          message: request.message,
+          adminMessage: request.adminMessage,
+          adminResponse: request.adminResponse
+        };
+      }
+      
+      return {
+        id: request._id,
+        userId: request.user._id,
+        userEmail: request.user.email,
+        userName: request.user.name,
+        currentPlan: request.currentPlan,
+        requestedPlan: request.requestedPlan,
+        requestDate: request.createdAt,
+        status: request.status,
+        message: request.message,
+        adminMessage: request.adminMessage,
+        adminResponse: request.adminResponse
+      };
+    });
     
     res.json(formattedRequests);
   } catch (err) {

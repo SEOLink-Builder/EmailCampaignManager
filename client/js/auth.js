@@ -104,6 +104,36 @@ function getCurrentUser() {
 }
 
 /**
+ * Refresh user data from server
+ * @returns {Promise<object>} Updated user data
+ */
+async function refreshUserData() {
+    try {
+        const user = await apiGet('/api/auth/user');
+        if (user) {
+            // Update the stored user data with latest from server
+            const currentUser = getCurrentUser();
+            const updatedUser = { ...user, token: currentUser.token };
+            sessionStorage.setItem('user', JSON.stringify(updatedUser));
+            return updatedUser;
+        }
+    } catch (error) {
+        console.error('Error refreshing user data:', error);
+        // Don't throw error, just return current user data
+        return getCurrentUser();
+    }
+}
+
+/**
+ * Check if current user is admin
+ * @returns {boolean} True if user has admin role
+ */
+function isAdmin() {
+    const user = getCurrentUser();
+    return user && user.role === 'admin';
+}
+
+/**
  * Protect route - redirect to login if not authenticated
  */
 function protectRoute() {

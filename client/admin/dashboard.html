@@ -18,6 +18,98 @@
   <link rel="stylesheet" href="../css/styles.css">
   
   <style>
+    /* Admin Sidebar */
+    #sidebar {
+      min-width: 250px;
+      max-width: 250px;
+      background: #343a40;
+      color: #fff;
+      transition: all 0.3s;
+      position: fixed;
+      height: 100vh;
+      z-index: 999;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    #sidebar.active {
+      margin-left: -250px;
+    }
+    
+    #sidebar .sidebar-header {
+      padding: 20px;
+      background: #3a3f48;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    #sidebar ul.components {
+      padding: 20px 0;
+    }
+    
+    #sidebar ul li a {
+      padding: 15px 20px;
+      font-size: 1.1em;
+      display: block;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: all 0.3s;
+      border-left: 3px solid transparent;
+    }
+    
+    #sidebar ul li a:hover,
+    #sidebar ul li.active a {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 3px solid #4e73df;
+    }
+    
+    #sidebar ul li a i {
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+    }
+    
+    #sidebar .logout-section {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      padding: 0 20px;
+    }
+    
+    /* Page Content */
+    #content {
+      width: calc(100% - 250px);
+      min-height: 100vh;
+      transition: all 0.3s;
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+    
+    #content.expanded {
+      width: 100%;
+    }
+    
+    .navbar {
+      padding: 15px 20px;
+      background: #fff !important;
+      border: none;
+      border-radius: 0;
+      margin-bottom: 30px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    #sidebarCollapse {
+      background: #4e73df;
+      border-color: #4e73df;
+      transition: all 0.3s;
+    }
+    
+    #sidebarCollapse:hover {
+      background: #2653d4;
+      border-color: #2653d4;
+    }
+    
+    /* Badges & Labels */
     .admin-badge {
       background-color: #e74a3b;
       color: white;
@@ -74,8 +166,27 @@
       color: white;
     }
     
+    /* Dashboard Components */
     .metric-card {
       transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+      overflow: hidden;
+    }
+    
+    .metric-card.primary {
+      border-left-color: #4e73df;
+    }
+    
+    .metric-card.success {
+      border-left-color: #1cc88a;
+    }
+    
+    .metric-card.info {
+      border-left-color: #36b9cc;
+    }
+    
+    .metric-card.warning {
+      border-left-color: #f6c23e;
     }
     
     .metric-card:hover {
@@ -83,18 +194,79 @@
       box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
     
+    .metric-card .card-body {
+      padding: 1.25rem;
+    }
+    
+    /* Chart Containers */
     .chart-container {
       height: 300px;
+      position: relative;
+    }
+    
+    /* Tables */
+    .table-cards {
+      border-radius: 0.5rem;
+      overflow: hidden;
     }
     
     .recent-users tr,
     .plan-requests tr {
       cursor: pointer;
+      transition: all 0.2s;
     }
     
     .recent-users tr:hover,
     .plan-requests tr:hover {
-      background-color: rgba(0, 123, 255, 0.05);
+      background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    /* Animations */
+    .card-loaded {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Loading Spinners */
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+      flex-direction: column;
+    }
+    
+    .loading-spinner .spinner-text {
+      margin-top: 15px;
+      color: #6c757d;
+    }
+    
+    /* Dashboard Content */
+    .dashboard-content {
+      display: none;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      #sidebar {
+        margin-left: -250px;
+      }
+      #sidebar.active {
+        margin-left: 0;
+      }
+      #content {
+        width: 100%;
+      }
+      #content.active {
+        width: calc(100% - 250px);
+      }
+      .navbar-text {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -139,196 +311,227 @@
           <button type="button" id="sidebarCollapse" class="btn btn-primary">
             <i class="fas fa-bars"></i>
           </button>
-          <span class="navbar-text ml-auto">
+          <span class="navbar-text ml-auto d-flex align-items-center">
+            <a href="../pages/dashboard.html" id="user-view-link" class="btn btn-sm btn-outline-secondary me-3">
+              <i class="fas fa-user me-1"></i> Switch to User View
+            </a>
             <span id="admin-name">Admin User</span>
           </span>
         </div>
       </nav>
 
       <div class="container-fluid">
-        <h2 class="mb-4">Admin Dashboard</h2>
-        
-        <!-- Stats Cards -->
-        <div class="row mb-4">
-          <div class="col-md-3">
-            <div class="card shadow metric-card h-100">
-              <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                  <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                      Total Users
-                    </div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="user-count">0</div>
-                  </div>
-                  <div class="col-auto">
-                    <i class="fas fa-users fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-md-3">
-            <div class="card shadow metric-card h-100">
-              <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                  <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                      Active Campaigns
-                    </div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="campaigns-count">0</div>
-                  </div>
-                  <div class="col-auto">
-                    <i class="fas fa-paper-plane fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-md-3">
-            <div class="card shadow metric-card h-100">
-              <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                  <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                      Email Lists
-                    </div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="lists-count">0</div>
-                  </div>
-                  <div class="col-auto">
-                    <i class="fas fa-address-book fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-md-3">
-            <div class="card shadow metric-card h-100">
-              <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                  <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                      Email Templates
-                    </div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="templates-count">0</div>
-                  </div>
-                  <div class="col-auto">
-                    <i class="fas fa-envelope-open fa-2x text-gray-300"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="mb-0">Admin Dashboard</h2>
+          <button id="refresh-btn" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
         </div>
         
-        <!-- Charts -->
-        <div class="row mb-4">
-          <div class="col-md-8">
-            <div class="card shadow mb-4">
-              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">User Registrations</h6>
-              </div>
-              <div class="card-body">
-                <div class="chart-container">
-                  <canvas id="registrationsChart"></canvas>
-                </div>
-              </div>
-            </div>
+        <!-- Main loading spinner - shown before data loads -->
+        <div class="loading-spinner mb-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading dashboard data...</span>
           </div>
-          
-          <div class="col-md-4">
-            <div class="card shadow mb-4">
-              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Plan Distribution</h6>
-              </div>
-              <div class="card-body">
-                <div class="chart-container">
-                  <canvas id="planDistributionChart"></canvas>
-                </div>
-              </div>
-            </div>
-          </div>
+          <p class="spinner-text">Loading dashboard data...</p>
         </div>
         
-        <!-- Recent Users -->
-        <div class="row mb-4">
-          <div class="col-md-7">
-            <div class="card shadow">
-              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Recent Users</h6>
-                <a href="users.html" class="btn btn-sm btn-primary">View All</a>
+        <!-- Dashboard content - initially hidden until data loads -->
+        <div class="dashboard-content">
+          <!-- Stats Cards -->
+          <div class="row mb-4">
+            <div class="col-md-3 mb-4">
+              <div class="card shadow metric-card h-100 primary">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        Total Users
+                      </div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" id="user-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-users fa-2x text-primary opacity-25"></i>
+                    </div>
+                  </div>
+                  <div class="mt-3 small text-muted">
+                    <i class="fas fa-user-plus me-1"></i> All registered accounts
+                  </div>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table class="table table-hover recent-users" id="recent-users-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Plan</th>
-                        <th>Registered</th>
-                        <th>Last Login</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="5" class="text-center">
-                          <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                          <p class="mt-2">Loading users...</p>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+              <div class="card shadow metric-card h-100 success">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                        Active Campaigns
+                      </div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" id="campaigns-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-paper-plane fa-2x text-success opacity-25"></i>
+                    </div>
+                  </div>
+                  <div class="mt-3 small text-muted">
+                    <i class="fas fa-clock me-1"></i> Currently active email campaigns
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+              <div class="card shadow metric-card h-100 info">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                        Email Lists
+                      </div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" id="lists-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-address-book fa-2x text-info opacity-25"></i>
+                    </div>
+                  </div>
+                  <div class="mt-3 small text-muted">
+                    <i class="fas fa-list me-1"></i> Total subscriber lists in system
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+              <div class="card shadow metric-card h-100 warning">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                        Email Templates
+                      </div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800" id="templates-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-envelope-open fa-2x text-warning opacity-25"></i>
+                    </div>
+                  </div>
+                  <div class="mt-3 small text-muted">
+                    <i class="fas fa-palette me-1"></i> Created email design templates
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+          <!-- Charts -->
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-primary">User Registrations</h6>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                      Last 30 Days
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chartRangeDropdown">
+                      <li><a class="dropdown-item active" href="#">Last 30 Days</a></li>
+                      <li><a class="dropdown-item" href="#">Last 90 Days</a></li>
+                      <li><a class="dropdown-item" href="#">Last Year</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="chart-container">
+                    <canvas id="registrationsChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-primary">Plan Distribution</h6>
+                </div>
+                <div class="card-body">
+                  <div class="chart-container">
+                    <canvas id="planDistributionChart"></canvas>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           
-          <!-- Plan Requests -->
-          <div class="col-md-5">
-            <div class="card shadow h-100">
-              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Pending Plan Requests</h6>
-                <a href="plan-requests.html" class="btn btn-sm btn-primary">View All</a>
-              </div>
-              <div class="card-body">
-                <div id="no-plan-requests" class="d-none text-center py-4">
-                  <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                  <p>No pending plan requests</p>
+          <!-- Recent Users -->
+          <div class="row mb-4">
+            <div class="col-md-7">
+              <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-primary">Recent Users</h6>
+                  <a href="users.html" class="btn btn-sm btn-primary">
+                    <i class="fas fa-users me-1"></i> Manage Users
+                  </a>
                 </div>
-                
-                <div class="table-responsive">
-                  <table class="table table-hover plan-requests" id="plan-requests-table">
-                    <thead>
-                      <tr>
-                        <th>User</th>
-                        <th>Current</th>
-                        <th>Requested</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="6" class="text-center">
-                          <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                          <p class="mt-2">Loading requests...</p>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-hover recent-users" id="recent-users-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Plan</th>
+                          <th>Registered</th>
+                          <th>Last Login</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- Will be populated dynamically -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Plan Requests -->
+            <div class="col-md-5">
+              <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-primary">Pending Plan Requests</h6>
+                  <a href="plan-requests.html" class="btn btn-sm btn-primary">
+                    <i class="fas fa-tasks me-1"></i> View All
+                  </a>
+                </div>
+                <div class="card-body">
+                  <div id="no-plan-requests" class="d-none text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p>No pending plan requests</p>
+                  </div>
+                  
+                  <div class="table-responsive">
+                    <table class="table table-hover plan-requests" id="plan-requests-table">
+                      <thead>
+                        <tr>
+                          <th>User</th>
+                          <th>Current</th>
+                          <th>Requested</th>
+                          <th>Date</th>
+                          <th>Status</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- Will be populated dynamically -->
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </div> <!-- End of dashboard-content -->
       </div>
     </div>
   </div>

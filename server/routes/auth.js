@@ -50,7 +50,7 @@ router.post(
       jwt.sign(
         payload,
         process.env.JWT_SECRET || 'jwt-secret-token',
-        { expiresIn: '1d' },
+        { expiresIn: '7d' },
         (err, token) => {
           if (err) throw err;
           res.json({ 
@@ -118,7 +118,7 @@ router.post(
       jwt.sign(
         payload,
         process.env.JWT_SECRET || 'jwt-secret-token',
-        { expiresIn: '1d' },
+        { expiresIn: '7d' },
         (err, token) => {
           if (err) throw err;
           res.json({ 

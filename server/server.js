@@ -14,6 +14,9 @@ require('dotenv').config();
 // Create Express app
 const app = express();
 
+// Enable trust proxy to work with rate limiting correctly
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 connectDB();
 
@@ -55,13 +58,32 @@ const apiLimiter = rateLimit({
   }
 });
 
-// Apply rate limiting to API routes
-app.use('/api/', apiLimiter);
+// Define admin rate limiter - much higher limits for admin routes
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // limit each IP to 500 requests per windowMs for admin routes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many admin requests, please try again later.'
+  }
+});
+
+// Apply general rate limiting to API routes, but exclude admin routes
+app.use('/api/', (req, res, next) => {
+  // Skip rate limiting for admin routes and use adminLimiter instead
+  if (req.path.startsWith('/admin/')) {
+    return adminLimiter(req, res, next);
+  }
+  // Use regular API rate limiter for non-admin routes
+  return apiLimiter(req, res, next);
+});
 
 // More strict rate limiting for authentication routes to prevent brute force
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // limit each IP to 10 login/register requests per hour
+  max: 20, // limit each IP to 20 login/register requests per hour (increased from 10)
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -70,17 +92,19 @@ const authLimiter = rateLimit({
   }
 });
 
-// Session middleware
+// Session middleware with extended timeout for admin users
 app.use(session({
   secret: process.env.SESSION_SECRET || 'email-campaign-secret',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ 
     mongoUrl: process.env.MONGODB_URI || 'mongodb+srv://admin:admin123@cluster0.mongodb.net/email-campaign-tool?retryWrites=true&w=majority',
-    collectionName: 'sessions' 
+    collectionName: 'sessions',
+    // Add touch after option to update session on activity
+    touchAfter: 3600 // update session timestamp every hour instead of every request
   }),
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days (extended from 1 day)
   }
 }));
 

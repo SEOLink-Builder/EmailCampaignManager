@@ -65,6 +65,17 @@ async function displayUserInfo() {
                 <span class="badge ${badgeClass}">${planInfo.planName}</span>
             `;
         }
+        
+        // Show/hide admin view link based on user role
+        const adminViewLink = document.getElementById('adminViewLink');
+        if (adminViewLink) {
+            // Use the isAdmin helper function
+            if (isAdmin()) {
+                adminViewLink.style.display = 'block';
+            } else {
+                adminViewLink.style.display = 'none';
+            }
+        }
     } catch (error) {
         console.error('Error fetching plan info:', error);
         // If error, we'll keep the default "Free Plan" badge

@@ -10,14 +10,19 @@ async function protectAdminRoute() {
   }
   
   try {
-    const user = await apiGet('/api/auth/user');
+    // Refresh user data from server to ensure up-to-date role information
+    await refreshUserData();
     
-    if (!user || user.role !== 'admin') {
+    // Check if user is admin using the helper function
+    if (!isAdmin()) {
       // Not an admin user
       alert('You do not have permission to access this area.');
       window.location.href = '../pages/dashboard.html';
       return;
     }
+    
+    // Get current user from session storage
+    const user = getCurrentUser();
     
     // Update admin name in navbar
     document.getElementById('admin-name').textContent = user.name || user.email;
@@ -31,31 +36,116 @@ async function protectAdminRoute() {
 
 // Function to initialize the admin dashboard
 async function initAdminDashboard() {
-  await protectAdminRoute();
-  
-  // Set up event listeners
-  document.getElementById('logout-link').addEventListener('click', logout);
-  document.getElementById('sidebarCollapse').addEventListener('click', function() {
-    document.getElementById('sidebar').classList.toggle('active');
+  // Show loading state
+  document.querySelectorAll('.loading-spinner').forEach(el => {
+    el.style.display = 'flex';
   });
   
-  // Load dashboard data
   try {
-    const statsData = await apiGet('/api/admin/stats');
+    // First, verify admin permissions asynchronously
+    await protectAdminRoute();
+    
+    // Set up event listeners
+    document.getElementById('logout-link').addEventListener('click', logout);
+    document.getElementById('sidebarCollapse').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('active');
+      
+      // Save sidebar state to localStorage
+      const sidebarActive = document.getElementById('sidebar').classList.contains('active');
+      localStorage.setItem('admin_sidebar_collapsed', sidebarActive ? 'true' : 'false');
+    });
+    
+    // Restore sidebar state from localStorage
+    const sidebarCollapsed = localStorage.getItem('admin_sidebar_collapsed') === 'true';
+    if (sidebarCollapsed) {
+      document.getElementById('sidebar').classList.add('active');
+    }
+    
+    // Implement auto-refresh functionality
+    setupAutoRefresh();
+    
+    // Start loading data
+    loadDashboardData();
+  } catch (error) {
+    console.error('Error initializing admin dashboard:', error);
+    showErrorAlert('Failed to initialize dashboard. Please try refreshing the page.');
+    
+    // Hide all loading spinners
+    document.querySelectorAll('.loading-spinner').forEach(el => {
+      el.style.display = 'none';
+    });
+  }
+}
+
+// Load dashboard data more efficiently with Promise.all for parallel requests
+async function loadDashboardData() {
+  try {
+    // Fetch stats and plan requests in parallel
+    const [statsData, planRequests] = await Promise.all([
+      apiGet('/api/admin/stats'),
+      apiGet('/api/admin/plan-requests')
+    ]);
+    
+    // Update the UI with the fetched data
     updateDashboardStats(statsData);
     initDashboardCharts(statsData);
     populateRecentUsers(statsData.recentUsers);
-    
-    // Load plan requests
-    const planRequests = await apiGet('/api/admin/plan-requests');
     populatePlanRequests(planRequests);
-    
-    // Set up plan request modal handlers
     setupPlanRequestModal();
+    
+    // Hide loading spinners after data is loaded
+    document.querySelectorAll('.loading-spinner').forEach(el => {
+      el.style.display = 'none';
+    });
+    
+    // Show page content
+    document.querySelectorAll('.dashboard-content').forEach(el => {
+      el.style.display = 'block';
+    });
+    
+    // Add smooth fade-in animation to dashboard cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+      setTimeout(() => {
+        card.classList.add('card-loaded');
+      }, 100 * index); // Stagger the animations
+    });
     
   } catch (error) {
     console.error('Error loading admin dashboard data:', error);
     showErrorAlert('Failed to load dashboard data. Please try refreshing the page.');
+    
+    // Hide loading spinners
+    document.querySelectorAll('.loading-spinner').forEach(el => {
+      el.style.display = 'none';
+    });
+  }
+}
+
+// Set up auto-refresh functionality
+function setupAutoRefresh() {
+  // Add refresh button click handler
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      // Show loading spinner on the refresh button
+      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      refreshBtn.disabled = true;
+      
+      // Reload data
+      loadDashboardData().then(() => {
+        // Reset button state after refresh
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        refreshBtn.disabled = false;
+        
+        // Show success toast
+        showSuccessAlert('Dashboard data refreshed successfully');
+      }).catch(() => {
+        // Reset button state on error
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        refreshBtn.disabled = false;
+      });
+    });
   }
 }
 
@@ -230,17 +320,32 @@ function populatePlanRequests(requests) {
   
   pendingRequests.forEach(request => {
     const row = document.createElement('tr');
+    const isDeletedUser = request.userId === null;
+    
+    // Add data attributes for reference in event handlers
+    row.setAttribute('data-request-id', request.id);
+    row.setAttribute('data-user-deleted', isDeletedUser.toString());
     
     const requestDate = new Date(request.requestDate);
     
+    // Add warning class if user is deleted
+    if (isDeletedUser) {
+      row.classList.add('table-warning');
+    }
+    
     row.innerHTML = `
-      <td>${request.userName || request.userEmail}</td>
+      <td>
+        ${isDeletedUser ? 
+          '<span class="text-muted"><i class="fas fa-exclamation-triangle text-warning me-1"></i> ' + request.userName + '</span>' :
+          request.userName || request.userEmail
+        }
+      </td>
       <td><span class="plan-badge plan-${request.currentPlan}">${getPlanName(request.currentPlan)}</span></td>
       <td><span class="plan-badge plan-${request.requestedPlan}">${getPlanName(request.requestedPlan)}</span></td>
       <td>${formatDate(requestDate)}</td>
       <td><span class="status-badge status-${request.status}">${getStatusName(request.status)}</span></td>
       <td>
-        <button type="button" class="btn btn-sm btn-primary view-request" data-request-id="${request.id}">
+        <button type="button" class="btn btn-sm btn-primary view-request" data-request-id="${request.id}" data-user-deleted="${isDeletedUser}">
           <i class="fas fa-eye"></i> View
         </button>
       </td>
@@ -287,6 +392,8 @@ function openPlanRequestModal(requestId, requests) {
     return;
   }
   
+  const isDeletedUser = request.userId === null;
+  
   // Set request details in modal
   document.getElementById('modal-user-name').textContent = request.userName || 'N/A';
   document.getElementById('modal-user-email').textContent = request.userEmail;
@@ -296,9 +403,26 @@ function openPlanRequestModal(requestId, requests) {
   document.getElementById('modal-status').textContent = getStatusName(request.status);
   document.getElementById('modal-user-message').textContent = request.message || 'No message provided';
   
-  // Set request ID on buttons
+  // Show/hide deleted user warning
+  const deletedUserWarning = document.getElementById('deleted-user-warning');
+  if (deletedUserWarning) {
+    deletedUserWarning.style.display = isDeletedUser ? 'block' : 'none';
+  } else if (isDeletedUser) {
+    // Create warning if it doesn't exist
+    const warningHtml = `
+      <div id="deleted-user-warning" class="alert alert-warning mb-3">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Warning:</strong> This user has been deleted. If approved, the plan cannot be updated, but the request will still be marked as processed.
+      </div>
+    `;
+    document.querySelector('.modal-body').insertAdjacentHTML('afterbegin', warningHtml);
+  }
+  
+  // Set request ID and deleted user status on buttons
   document.getElementById('approve-plan-btn').setAttribute('data-request-id', requestId);
+  document.getElementById('approve-plan-btn').setAttribute('data-user-deleted', isDeletedUser.toString());
   document.getElementById('reject-plan-btn').setAttribute('data-request-id', requestId);
+  document.getElementById('reject-plan-btn').setAttribute('data-user-deleted', isDeletedUser.toString());
   
   // Clear admin message field
   document.getElementById('admin-message').value = '';
@@ -322,6 +446,18 @@ function openPlanRequestModal(requestId, requests) {
 // Respond to a plan request (approve or reject)
 async function respondToPlanRequest(requestId, approved, message) {
   try {
+    const approveBtn = document.getElementById('approve-plan-btn');
+    const rejectBtn = document.getElementById('reject-plan-btn');
+    const isUserDeleted = approveBtn.getAttribute('data-user-deleted') === 'true';
+    
+    // Confirm if approving for deleted user
+    if (isUserDeleted && approved) {
+      const confirmed = confirm("This user account has been deleted. The plan cannot be updated, but the request will still be marked as processed. Do you want to continue?");
+      if (!confirmed) {
+        return; // User cancelled the action
+      }
+    }
+    
     const loadingBtn = approved ? 'approve-plan-btn' : 'reject-plan-btn';
     const btnText = approved ? 'Approve Request' : 'Reject Request';
     
@@ -341,7 +477,11 @@ async function respondToPlanRequest(requestId, approved, message) {
     modal.hide();
     
     // Show success message
-    showSuccessAlert(`Plan request ${approved ? 'approved' : 'rejected'} successfully.`);
+    let successMessage = `Plan request ${approved ? 'approved' : 'rejected'} successfully.`;
+    if (isUserDeleted && approved) {
+      successMessage += ' (Note: User account no longer exists, so plan was not actually updated)';
+    }
+    showSuccessAlert(successMessage);
     
     // Reload dashboard data after a short delay
     setTimeout(() => {
